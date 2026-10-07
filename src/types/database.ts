@@ -151,6 +151,7 @@ export type Database = {
           position: number | null;
           profile_id: string | null;
           score: number | null;
+          score_breakdown: Json | null;
           session_id: string;
           updated_at: string;
         };
@@ -164,6 +165,7 @@ export type Database = {
           position?: number | null;
           profile_id?: string | null;
           score?: number | null;
+          score_breakdown?: Json | null;
           session_id: string;
           updated_at?: string;
         };
@@ -177,6 +179,7 @@ export type Database = {
           position?: number | null;
           profile_id?: string | null;
           score?: number | null;
+          score_breakdown?: Json | null;
           session_id?: string;
           updated_at?: string;
         };
@@ -216,6 +219,7 @@ export type Database = {
           location: string | null;
           notes: string | null;
           played_at: string;
+          team_details: Json | null;
           updated_at: string;
           visibility: string;
         };
@@ -230,6 +234,7 @@ export type Database = {
           location?: string | null;
           notes?: string | null;
           played_at?: string;
+          team_details?: Json | null;
           updated_at?: string;
           visibility?: string;
         };
@@ -244,6 +249,7 @@ export type Database = {
           location?: string | null;
           notes?: string | null;
           played_at?: string;
+          team_details?: Json | null;
           updated_at?: string;
           visibility?: string;
         };
@@ -286,6 +292,7 @@ export type Database = {
           playtime_minutes_max: number | null;
           playtime_minutes_min: number | null;
           publisher: string | null;
+          scoring_schema: Json | null;
           scoring_type: string;
           slug: string;
           title: string;
@@ -306,6 +313,7 @@ export type Database = {
           playtime_minutes_max?: number | null;
           playtime_minutes_min?: number | null;
           publisher?: string | null;
+          scoring_schema?: Json | null;
           scoring_type?: string;
           slug: string;
           title: string;
@@ -326,6 +334,7 @@ export type Database = {
           playtime_minutes_max?: number | null;
           playtime_minutes_min?: number | null;
           publisher?: string | null;
+          scoring_schema?: Json | null;
           scoring_type?: string;
           slug?: string;
           title?: string;

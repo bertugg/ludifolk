@@ -13,9 +13,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { GameCombobox } from "@/components/game-combobox";
+import { ScoreEntryFields } from "@/components/score-entry-fields";
+import { computeCategoryTotal, parseScoringSchema, playerCategories, teamCategories } from "@/lib/scoring";
 import type { GameSummary } from "@/lib/actions/search-games";
 
-type Row = { id: string; name: string; score: string; position: string; winner: boolean };
+type Row = {
+  id: string;
+  name: string;
+  score: string;
+  position: string;
+  winner: boolean;
+  breakdown: Record<string, string>;
+  showDetails: boolean;
+};
 type GroupMember = { id: string; username: string; display_name: string | null };
 type Group = { id: string; name: string; members: GroupMember[] };
 
@@ -111,6 +121,10 @@ function PhotoPicker() {
   );
 }
 
+function emptyRow(id: string, name = ""): Row {
+  return { id, name, score: "", position: "", winner: false, breakdown: {}, showDetails: false };
+}
+
 export function LogGameForm({
   initialGames,
   ownUsername,
@@ -152,12 +166,14 @@ function LogGameFormInner({
   const selfRowId = useId();
   const [selectedGame, setSelectedGame] = useState<GameSummary | null>(null);
   const [groupId, setGroupId] = useState("none");
-  const [rows, setRows] = useState<Row[]>([
-    { id: selfRowId, name: ownUsername, score: "", position: "", winner: false },
-  ]);
+  const [rows, setRows] = useState<Row[]>([emptyRow(selfRowId, ownUsername)]);
+  const [teamDetails, setTeamDetails] = useState<Record<string, string>>({});
 
   const scoringType = selectedGame?.scoring_type ?? "numeric";
   const selectedGroup = groups.find((g) => g.id === groupId) ?? null;
+  const schema = parseScoringSchema(selectedGame?.scoring_schema);
+  const playerCats = playerCategories(schema);
+  const teamCats = teamCategories(schema);
 
   if (state && "success" in state) {
     return <SuccessView state={state} onLogAnother={onLogAnother} />;
@@ -174,7 +190,7 @@ function LogGameFormInner({
   }
 
   function addRow() {
-    setRows((r) => [...r, { id: crypto.randomUUID(), name: "", score: "", position: "", winner: false }]);
+    setRows((r) => [...r, emptyRow(crypto.randomUUID())]);
   }
 
   function removeRow(id: string) {
@@ -183,6 +199,20 @@ function LogGameFormInner({
 
   function updateRow(id: string, patch: Partial<Row>) {
     setRows((r) => r.map((row) => (row.id === id ? { ...row, ...patch } : row)));
+  }
+
+  function updateRowCategory(id: string, key: string, value: string) {
+    setRows((r) =>
+      r.map((row) => {
+        if (row.id !== id) return row;
+        const breakdown = { ...row.breakdown, [key]: value };
+        const numeric = Object.fromEntries(
+          Object.entries(breakdown).map(([k, v]) => [k, v.trim() ? Number(v) : null]),
+        );
+        const total = computeCategoryTotal(numeric, playerCats);
+        return { ...row, breakdown, score: total !== null ? String(total) : row.score };
+      }),
+    );
   }
 
   const usedNames = new Set(rows.map((r) => r.name.toLowerCase()).filter(Boolean));
@@ -227,75 +257,105 @@ function LogGameFormInner({
                 .map((m) => ({ value: m.username, label: memberLabel(m) }))
             : [];
           return (
-            <div key={row.id} className="flex items-center gap-2">
-              {selectedGroup ? (
-                <Select
-                  name={`participant-${row.id}-name`}
-                  value={row.name || undefined}
-                  onValueChange={(v) => updateRow(row.id, { name: v ?? "" })}
-                  items={memberItems}
-                >
-                  <SelectTrigger className="w-full flex-1">
-                    <SelectValue placeholder="Choose a member" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {memberItems.map((m) => (
-                      <SelectItem key={m.value} value={m.value}>
-                        {m.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              ) : (
-                <Input
-                  name={`participant-${row.id}-name`}
-                  placeholder={isSelf ? ownDisplayName || ownUsername : "Name or Boardly username"}
-                  value={row.name}
-                  onChange={(e) => updateRow(row.id, { name: e.target.value })}
-                  className="flex-1"
-                />
-              )}
-              {scoringType === "numeric" && (
-                <Input
-                  name={`participant-${row.id}-score`}
-                  type="number"
-                  placeholder="Score"
-                  value={row.score}
-                  onChange={(e) => updateRow(row.id, { score: e.target.value })}
-                  className="w-20"
-                />
-              )}
-              {scoringType === "position" && (
-                <Input
-                  name={`participant-${row.id}-position`}
-                  type="number"
-                  min={1}
-                  placeholder="Pos"
-                  value={row.position}
-                  onChange={(e) => updateRow(row.id, { position: e.target.value })}
-                  className="w-16"
-                />
-              )}
-              {scoringType === "winner_only" && (
-                <div className="flex items-center gap-1.5">
-                  <Checkbox
-                    name={`participant-${row.id}-winner`}
-                    checked={row.winner}
-                    onCheckedChange={(checked) => updateRow(row.id, { winner: checked === true })}
+            <div key={row.id} className="flex flex-col gap-1.5">
+              <div className="flex items-center gap-2">
+                {selectedGroup ? (
+                  <Select
+                    name={`participant-${row.id}-name`}
+                    value={row.name || undefined}
+                    onValueChange={(v) => updateRow(row.id, { name: v ?? "" })}
+                    items={memberItems}
+                  >
+                    <SelectTrigger className="w-full flex-1">
+                      <SelectValue placeholder="Choose a member" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {memberItems.map((m) => (
+                        <SelectItem key={m.value} value={m.value}>
+                          {m.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Input
+                    name={`participant-${row.id}-name`}
+                    placeholder={isSelf ? ownDisplayName || ownUsername : "Name or Boardly username"}
+                    value={row.name}
+                    onChange={(e) => updateRow(row.id, { name: e.target.value })}
+                    className="flex-1"
                   />
-                  <span className="text-xs text-muted-foreground">Won</span>
-                </div>
+                )}
+                {scoringType === "numeric" && (
+                  <Input
+                    name={`participant-${row.id}-score`}
+                    type="number"
+                    placeholder="Score"
+                    value={row.score}
+                    onChange={(e) => updateRow(row.id, { score: e.target.value })}
+                    readOnly={row.showDetails && computeCategoryTotal(
+                      Object.fromEntries(
+                        Object.entries(row.breakdown).map(([k, v]) => [k, v.trim() ? Number(v) : null]),
+                      ),
+                      playerCats,
+                    ) !== null}
+                    className="w-20"
+                  />
+                )}
+                {scoringType === "position" && (
+                  <Input
+                    name={`participant-${row.id}-position`}
+                    type="number"
+                    min={1}
+                    placeholder="Pos"
+                    value={row.position}
+                    onChange={(e) => updateRow(row.id, { position: e.target.value })}
+                    className="w-16"
+                  />
+                )}
+                {scoringType === "winner_only" && (
+                  <div className="flex items-center gap-1.5">
+                    <Checkbox
+                      name={`participant-${row.id}-winner`}
+                      checked={row.winner}
+                      onCheckedChange={(checked) => updateRow(row.id, { winner: checked === true })}
+                    />
+                    <span className="text-xs text-muted-foreground">Won</span>
+                  </div>
+                )}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  onClick={() => removeRow(row.id)}
+                  disabled={rows.length === 1}
+                  aria-label="Remove player"
+                >
+                  ×
+                </Button>
+              </div>
+
+              {scoringType === "numeric" && playerCats.length > 0 && (
+                <>
+                  <Button
+                    type="button"
+                    variant="link"
+                    size="sm"
+                    className="h-auto w-fit self-start p-0 text-xs"
+                    onClick={() => updateRow(row.id, { showDetails: !row.showDetails })}
+                  >
+                    {row.showDetails ? "Hide detailed score" : "Add detailed score"}
+                  </Button>
+                  {row.showDetails && (
+                    <ScoreEntryFields
+                      fieldPrefix={`participant-${row.id}`}
+                      categories={playerCats}
+                      values={row.breakdown}
+                      onChange={(key, value) => updateRowCategory(row.id, key, value)}
+                    />
+                  )}
+                </>
               )}
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-sm"
-                onClick={() => removeRow(row.id)}
-                disabled={rows.length === 1}
-                aria-label="Remove player"
-              >
-                ×
-              </Button>
             </div>
           );
         })}
@@ -325,6 +385,18 @@ function LogGameFormInner({
           </Select>
           <Label htmlFor="cooperative_score">Team score (optional)</Label>
           <Input id="cooperative_score" name="cooperative_score" type="number" />
+        </div>
+      )}
+
+      {teamCats.length > 0 && (
+        <div className="flex flex-col gap-1.5">
+          <Label>Game details</Label>
+          <ScoreEntryFields
+            fieldPrefix="team"
+            categories={teamCats}
+            values={teamDetails}
+            onChange={(key, value) => setTeamDetails((d) => ({ ...d, [key]: value }))}
+          />
         </div>
       )}
 

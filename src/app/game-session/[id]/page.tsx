@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { Metadata } from "next";
-import { HeartIcon } from "lucide-react";
+import { HeartIcon, PencilIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +12,7 @@ import { LikeButton } from "@/components/like-button";
 import { ShareButton } from "@/components/share-button";
 import { participantDisplayName, sessionHeadline, sortParticipants } from "@/lib/session-display";
 import { numericStats, percentileRank, performanceLabel } from "@/lib/stats";
+import { hasAnyValue, parseBreakdown, parseScoringSchema, playerCategories, teamCategories } from "@/lib/scoring";
 import { CommentForm } from "./comment-form";
 import { DeleteCommentButton } from "./delete-comment-button";
 import { getSessionData } from "./data";
@@ -95,6 +96,15 @@ export default async function GameSessionPage({ params }: { params: Promise<{ id
   const myParticipant = session.participants.find(
     (p) => p.profile_id === auth.user?.id && p.confirmation_status === "confirmed",
   );
+  const isCreator = auth.user?.id === session.created_by;
+
+  const schema = parseScoringSchema(game.scoring_schema);
+  const playerCats = playerCategories(schema);
+  const teamCats = teamCategories(schema);
+  const playersWithBreakdown = players
+    .map((p) => ({ player: p, breakdown: parseBreakdown(p.score_breakdown) }))
+    .filter((p) => hasAnyValue(p.breakdown));
+  const teamDetails = parseBreakdown(session.team_details);
 
   let performance: {
     score: number;
@@ -143,7 +153,14 @@ export default async function GameSessionPage({ params }: { params: Promise<{ id
     <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-4 p-4">
       <div className="flex items-center justify-between">
         <BackButton fallbackHref={`/games/${game.slug}`} />
-        <ShareButton title={`${game.title} — Boardly`} referralSource={`game_session:${session.id}`} />
+        <div className="flex items-center gap-1">
+          {isCreator && (
+            <ButtonLink href={`/game-session/${session.id}/edit`} variant="ghost" size="icon" aria-label="Edit result">
+              <PencilIcon className="size-4" />
+            </ButtonLink>
+          )}
+          <ShareButton title={`${game.title} — Boardly`} referralSource={`game_session:${session.id}`} />
+        </div>
       </div>
 
       <div className="relative aspect-[2/1] w-full overflow-hidden rounded-xl bg-muted">
@@ -183,6 +200,24 @@ export default async function GameSessionPage({ params }: { params: Promise<{ id
         </div>
       ) : null}
 
+      {teamCats.length > 0 && hasAnyValue(teamDetails) && (
+        <div className="flex flex-col gap-2 rounded-lg border border-border p-3">
+          <h2 className="text-sm font-semibold text-muted-foreground">Game Details</h2>
+          <div className="flex flex-wrap gap-4">
+            {teamCats
+              .filter((c) => teamDetails[c.key] !== null && teamDetails[c.key] !== undefined)
+              .map((c) => (
+                <div key={c.key}>
+                  <p className="text-lg font-semibold">{teamDetails[c.key]}</p>
+                  <p className="text-xs text-muted-foreground" title={c.description}>
+                    {c.label}
+                  </p>
+                </div>
+              ))}
+          </div>
+        </div>
+      )}
+
       <ul className="flex flex-col gap-2">
         {players.map((p, i) => {
           const name = participantDisplayName(p);
@@ -208,6 +243,66 @@ export default async function GameSessionPage({ params }: { params: Promise<{ id
           );
         })}
       </ul>
+
+      {playerCats.length > 0 && playersWithBreakdown.length === 1 && (
+        <Card className="gap-2 p-4">
+          <h2 className="text-sm font-semibold text-muted-foreground">Score Breakdown</h2>
+          <ul className="flex flex-col gap-1.5">
+            {playerCats.map((c) => (
+              <li key={c.key} className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground" title={c.description}>
+                  {c.label}
+                </span>
+                <span>{playersWithBreakdown[0].breakdown[c.key] ?? "—"}</span>
+              </li>
+            ))}
+          </ul>
+          <div className="flex items-center justify-between border-t border-border pt-2 text-sm font-semibold">
+            <span>Total</span>
+            <span>{playersWithBreakdown[0].player.score ?? "—"}</span>
+          </div>
+        </Card>
+      )}
+
+      {playerCats.length > 0 && playersWithBreakdown.length > 1 && (
+        <Card className="gap-2 overflow-x-auto p-4">
+          <h2 className="text-sm font-semibold text-muted-foreground">Score Breakdown</h2>
+          <table className="w-full text-sm">
+            <thead>
+              <tr>
+                <th className="pb-1.5 text-left font-normal text-muted-foreground"></th>
+                {playersWithBreakdown.map(({ player }, i) => (
+                  <th key={i} className="px-2 pb-1.5 text-right font-medium">
+                    {participantDisplayName(player)}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {playerCats.map((c) => (
+                <tr key={c.key} className="border-t border-border">
+                  <td className="py-1.5 text-muted-foreground" title={c.description}>
+                    {c.label}
+                  </td>
+                  {playersWithBreakdown.map(({ breakdown }, i) => (
+                    <td key={i} className="px-2 py-1.5 text-right">
+                      {breakdown[c.key] ?? "—"}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+              <tr className="border-t border-border font-semibold">
+                <td className="py-1.5">Total</td>
+                {playersWithBreakdown.map(({ player }, i) => (
+                  <td key={i} className="px-2 py-1.5 text-right">
+                    {player.score ?? "—"}
+                  </td>
+                ))}
+              </tr>
+            </tbody>
+          </table>
+        </Card>
+      )}
 
       {performance && (
         <Card className="gap-2 p-4">

@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { computeCategoryTotal, parseScoringSchema, playerCategories, teamCategories } from "@/lib/scoring";
 
 type ParticipantResult = {
   name: string;
@@ -22,20 +23,62 @@ export type LogGameFormState =
     }
   | null;
 
-type ParsedRow = { id: string; name: string; score: string; position: string; winner: boolean };
+type ParsedRow = {
+  id: string;
+  name: string;
+  score: string;
+  position: string;
+  winner: boolean;
+  breakdown: Record<string, string>;
+};
 
 function parseRows(formData: FormData): ParsedRow[] {
   const rows = new Map<string, ParsedRow>();
+  const get = (id: string) => {
+    const existing = rows.get(id);
+    if (existing) return existing;
+    const fresh: ParsedRow = { id, name: "", score: "", position: "", winner: false, breakdown: {} };
+    rows.set(id, fresh);
+    return fresh;
+  };
+
   for (const [key, value] of formData.entries()) {
-    const m = key.match(/^participant-(.+)-(name|score|position|winner)$/);
-    if (!m) continue;
-    const [, id, field] = m;
-    const row = rows.get(id) ?? { id, name: "", score: "", position: "", winner: false };
-    if (field === "winner") row.winner = true;
-    else row[field as "name" | "score" | "position"] = String(value);
-    rows.set(id, row);
+    const simple = key.match(/^participant-(.+)-(name|score|position|winner)$/);
+    if (simple) {
+      const [, id, field] = simple;
+      const row = get(id);
+      if (field === "winner") row.winner = true;
+      else row[field as "name" | "score" | "position"] = String(value);
+      continue;
+    }
+    const category = key.match(/^participant-(.+)-cat-(.+)$/);
+    if (category) {
+      const [, id, categoryKey] = category;
+      const strValue = String(value).trim();
+      if (strValue) get(id).breakdown[categoryKey] = strValue;
+    }
   }
   return [...rows.values()].filter((r) => r.name.trim().length > 0);
+}
+
+function parseTeamBreakdown(formData: FormData): Record<string, string> {
+  const breakdown: Record<string, string> = {};
+  for (const [key, value] of formData.entries()) {
+    const match = key.match(/^team-cat-(.+)$/);
+    if (!match) continue;
+    const strValue = String(value).trim();
+    if (strValue) breakdown[match[1]] = strValue;
+  }
+  return breakdown;
+}
+
+function toNumericBreakdown(raw: Record<string, string>): Record<string, number> {
+  const result: Record<string, number> = {};
+  for (const [key, value] of Object.entries(raw)) {
+    const num = Number.parseFloat(value);
+    if (Number.isFinite(num)) result[key] = num;
+  }
+  return result;
 }
 
 export async function logGame(
@@ -55,13 +98,17 @@ export async function logGame(
 
   const { data: game } = await supabase
     .from("games")
-    .select("id, slug, title, scoring_type")
+    .select("id, slug, title, scoring_type, scoring_schema")
     .eq("id", gameId)
     .maybeSingle();
 
   if (!game) {
     return { error: "That game could not be found." };
   }
+
+  const schema = parseScoringSchema(game.scoring_schema);
+  const playerCats = playerCategories(schema);
+  const teamCats = teamCategories(schema);
 
   const rows = parseRows(formData);
   if (rows.length === 0) {
@@ -98,6 +145,7 @@ export async function logGame(
     score: number | null;
     position: number | null;
     is_winner: boolean;
+    score_breakdown: Record<string, number> | null;
   }[] = [];
 
   for (const row of rows) {
@@ -111,13 +159,26 @@ export async function logGame(
     const linked = profile && !usedProfileIds.has(profile.id);
     if (linked) usedProfileIds.add(profile!.id);
 
+    // The category breakdown is only meaningful for numeric-scoring games
+    // that actually define player categories; for everything else it's
+    // silently ignored even if present (defensive against a stale/tampered
+    // request after switching games in the UI).
+    const numericBreakdown =
+      game.scoring_type === "numeric" && playerCats.length > 0 ? toNumericBreakdown(row.breakdown) : {};
+    const scoreBreakdown = Object.keys(numericBreakdown).length > 0 ? numericBreakdown : null;
+    // Never trust a client-computed total — recompute server-side, and
+    // only when every contributing category is actually present (a partial
+    // breakdown must not be silently summed as if it were complete).
+    const computedTotal = scoreBreakdown ? computeCategoryTotal(numericBreakdown, playerCats) : null;
+
     resolved.push({
       profile_id: linked ? profile!.id : null,
       guest_name: linked ? null : name,
       display: linked ? profile!.display_name || profile!.username : name,
-      score: row.score.trim() ? Number.parseFloat(row.score) : null,
+      score: computedTotal ?? (row.score.trim() ? Number.parseFloat(row.score) : null),
       position: row.position.trim() ? Number.parseInt(row.position, 10) : null,
       is_winner: row.winner,
+      score_breakdown: scoreBreakdown,
     });
   }
 
@@ -161,6 +222,9 @@ export async function logGame(
   }
   // winner_only: r.is_winner already set from the checkbox, left as-is.
 
+  const teamBreakdownRaw = teamCats.length > 0 ? toNumericBreakdown(parseTeamBreakdown(formData)) : {};
+  const teamDetails = Object.keys(teamBreakdownRaw).length > 0 ? teamBreakdownRaw : null;
+
   const { data: session, error: sessionError } = await supabase
     .from("game_sessions")
     .insert({
@@ -172,6 +236,7 @@ export async function logGame(
       group_id: groupId,
       cooperative_outcome: cooperativeOutcome,
       cooperative_score: cooperativeScore,
+      team_details: teamDetails,
     })
     .select("id")
     .single();
@@ -188,6 +253,7 @@ export async function logGame(
       score: r.score,
       position: r.position,
       is_winner: r.is_winner,
+      score_breakdown: r.score_breakdown,
       added_by: auth.user!.id,
     })),
   );

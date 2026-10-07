@@ -12,10 +12,11 @@ export type GameSummary = {
   max_players: number | null;
   playtime_minutes_min: number | null;
   playtime_minutes_max: number | null;
+  scoring_schema: unknown;
 };
 
 const SUMMARY_COLUMNS =
-  "id, slug, title, image_url, scoring_type, min_players, max_players, playtime_minutes_min, playtime_minutes_max";
+  "id, slug, title, image_url, scoring_type, min_players, max_players, playtime_minutes_min, playtime_minutes_max, scoring_schema";
 
 export async function searchGames(query: string, limit = 8): Promise<GameSummary[]> {
   const supabase = await createClient();
