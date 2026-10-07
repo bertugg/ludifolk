@@ -37,7 +37,8 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith("/profile/") ||
     pathname === "/games" ||
     pathname.startsWith("/games/") ||
-    pathname.startsWith("/game-session/");
+    pathname.startsWith("/game-session/") ||
+    pathname.startsWith("/wrapped/");
 
   if (!data.user && !isPublicRoute) {
     const url = request.nextUrl.clone();

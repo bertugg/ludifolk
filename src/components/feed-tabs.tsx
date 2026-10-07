@@ -11,8 +11,17 @@ const TABS = [
 
 type TabKey = (typeof TABS)[number]["key"];
 
-export function FeedTabs({ forYou, friends }: { forYou: ReactNode; friends: ReactNode }) {
+export function FeedTabs({
+  forYou,
+  friends,
+  groups,
+}: {
+  forYou: ReactNode;
+  friends: ReactNode;
+  groups: ReactNode;
+}) {
   const [tab, setTab] = useState<TabKey>("for-you");
+  const panels = { "for-you": forYou, friends, groups };
 
   return (
     <>
@@ -34,14 +43,7 @@ export function FeedTabs({ forYou, friends }: { forYou: ReactNode; friends: Reac
         ))}
       </div>
 
-      {tab === "for-you" && forYou}
-      {tab === "friends" && friends}
-      {tab === "groups" && (
-        <div className="flex flex-col items-center gap-1 px-4 py-16 text-center">
-          <p className="text-sm font-medium">Coming soon</p>
-          <p className="text-xs text-muted-foreground">Join a group to see its activity here.</p>
-        </div>
-      )}
+      {panels[tab]}
     </>
   );
 }

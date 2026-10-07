@@ -8,9 +8,9 @@ export const getSessionData = cache(async (id: string) => {
     .select(
       `
         id, played_at, location, notes, cooperative_outcome, cooperative_score, visibility, created_by,
-        game:games ( slug, title, image_url, scoring_type ),
+        game:games ( id, slug, title, image_url, scoring_type ),
         participants:game_participants (
-          guest_name, score, position, is_winner, confirmation_status,
+          profile_id, guest_name, score, position, is_winner, confirmation_status,
           profile:profiles!game_participants_profile_id_fkey ( username, display_name, avatar_url )
         ),
         likes ( profile_id ),

@@ -5,13 +5,23 @@ import { cn } from "@/lib/utils";
 
 const TABS = [
   { key: "feed", label: "Feed" },
+  { key: "rankings", label: "Rankings" },
   { key: "members", label: "Members" },
 ] as const;
 
 type TabKey = (typeof TABS)[number]["key"];
 
-export function GroupTabs({ feed, members }: { feed: ReactNode; members: ReactNode }) {
+export function GroupTabs({
+  feed,
+  rankings,
+  members,
+}: {
+  feed: ReactNode;
+  rankings: ReactNode;
+  members: ReactNode;
+}) {
   const [tab, setTab] = useState<TabKey>("feed");
+  const panels = { feed, rankings, members };
 
   return (
     <>
@@ -33,7 +43,7 @@ export function GroupTabs({ feed, members }: { feed: ReactNode; members: ReactNo
         ))}
       </div>
 
-      {tab === "feed" ? feed : members}
+      {panels[tab]}
     </>
   );
 }

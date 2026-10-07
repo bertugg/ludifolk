@@ -10,6 +10,7 @@ import { ButtonLink } from "@/components/button-link";
 import { LikeButton } from "@/components/like-button";
 import { ShareButton } from "@/components/share-button";
 import { participantDisplayName, sessionHeadline, sortParticipants } from "@/lib/session-display";
+import { numericStats, percentileRank, performanceLabel } from "@/lib/stats";
 import { CommentForm } from "./comment-form";
 import { DeleteCommentButton } from "./delete-comment-button";
 import { getSessionData } from "./data";
@@ -91,6 +92,53 @@ export default async function GameSessionPage({ params }: { params: Promise<{ id
     .map((r) => r.data?.signedUrl)
     .filter((url): url is string => !!url);
 
+  const myParticipant = session.participants.find(
+    (p) => p.profile_id === auth.user?.id && p.confirmation_status === "confirmed",
+  );
+
+  let performance: {
+    score: number;
+    average: number;
+    best: number;
+    communityAverage: number | null;
+    percentile: number;
+    label: string;
+  } | null = null;
+
+  if (game.scoring_type === "numeric" && myParticipant && myParticipant.score !== null && auth.user) {
+    const [{ data: myGameRows }, { data: communityRows }] = await Promise.all([
+      supabase
+        .from("game_participants")
+        .select("score, position, is_winner, session:game_sessions!inner ( game_id )")
+        .eq("profile_id", auth.user.id)
+        .eq("confirmation_status", "confirmed")
+        .eq("session.game_id", game.id)
+        .not("score", "is", null),
+      supabase
+        .from("game_participants")
+        .select("score, session:game_sessions!inner ( game_id )")
+        .eq("confirmation_status", "confirmed")
+        .eq("session.game_id", game.id)
+        .not("score", "is", null),
+    ]);
+
+    const { averageScore, personalBest } = numericStats(myGameRows ?? []);
+    const communityScores = (communityRows ?? []).map((r) => r.score!);
+    const communityAverage = communityScores.length
+      ? Math.round((communityScores.reduce((a, b) => a + b, 0) / communityScores.length) * 10) / 10
+      : null;
+    const percentile = percentileRank(myParticipant.score, communityScores);
+
+    performance = {
+      score: myParticipant.score,
+      average: averageScore ?? myParticipant.score,
+      best: personalBest ?? myParticipant.score,
+      communityAverage,
+      percentile,
+      label: performanceLabel(percentile),
+    };
+  }
+
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-4 p-4">
       <div className="flex items-center justify-between">
@@ -160,6 +208,30 @@ export default async function GameSessionPage({ params }: { params: Promise<{ id
           );
         })}
       </ul>
+
+      {performance && (
+        <Card className="gap-2 p-4">
+          <Badge variant={performance.percentile >= 50 ? "success" : "secondary"} className="w-fit">
+            {performance.label}
+          </Badge>
+          <div className="flex flex-wrap gap-4 pt-1">
+            {[
+              ["your score", performance.score],
+              ["your average", performance.average],
+              ["personal best", performance.best],
+              ...(performance.communityAverage !== null
+                ? [["community avg", performance.communityAverage] as const]
+                : []),
+              ["percentile", `${performance.percentile}th`],
+            ].map(([label, value]) => (
+              <div key={label} className="text-center">
+                <p className="text-lg font-semibold">{value}</p>
+                <p className="text-xs text-muted-foreground">{label}</p>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
 
       {session.notes && (
         <p className="rounded-lg bg-muted p-3 text-sm italic leading-relaxed">

@@ -11,6 +11,9 @@ import { InviteMemberForm } from "./invite-member-form";
 import { RemoveMemberButton } from "./remove-member-button";
 import { GroupTabs } from "./group-tabs";
 import { leaveGroup } from "./actions";
+import { basicStats } from "@/lib/stats";
+
+const MEDALS = ["🥇", "🥈", "🥉"];
 
 export default async function GroupPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -42,6 +45,39 @@ export default async function GroupPage({ params }: { params: Promise<{ slug: st
   const myMembership = group.members.find((m) => m.profile_id === userId);
   const isOwner = myMembership?.role === "owner";
   const members = [...group.members].sort((a, b) => (a.role === b.role ? 0 : a.role === "owner" ? -1 : 1));
+
+  const { data: rankingRows } = await supabase
+    .from("game_participants")
+    .select("profile_id, score, position, is_winner, session:game_sessions!inner ( group_id )")
+    .eq("session.group_id", group.id)
+    .eq("confirmation_status", "confirmed")
+    .not("profile_id", "is", null);
+
+  const rowsByProfile = new Map<string, { score: number | null; position: number | null; is_winner: boolean }[]>();
+  for (const r of rankingRows ?? []) {
+    if (!r.profile_id) continue;
+    const rows = rowsByProfile.get(r.profile_id) ?? [];
+    rows.push({ score: r.score, position: r.position, is_winner: r.is_winner });
+    rowsByProfile.set(r.profile_id, rows);
+  }
+
+  const rankings = members
+    .map((m) => {
+      const { gamesPlayed, wins, winRate } = basicStats(rowsByProfile.get(m.profile_id) ?? []);
+      return {
+        profileId: m.profile_id,
+        name: m.profile?.display_name || m.profile?.username || "Unknown",
+        avatarUrl: m.profile?.avatar_url ?? null,
+        gamesPlayed,
+        wins,
+        winRate,
+      };
+    })
+    .sort((a, b) => {
+      if (a.gamesPlayed === 0 || b.gamesPlayed === 0) return b.gamesPlayed - a.gamesPlayed;
+      if (b.winRate !== a.winRate) return b.winRate - a.winRate;
+      return b.gamesPlayed - a.gamesPlayed;
+    });
 
   const { data: pendingInvites } = await supabase
     .from("group_invitations")
@@ -124,6 +160,45 @@ export default async function GroupPage({ params }: { params: Promise<{ slug: st
               </Card>
             ) : (
               feedItems.map((item) => <FeedCard key={item.id} item={item} />)
+            )}
+          </div>
+        }
+        rankings={
+          <div className="flex flex-col gap-2 pt-3">
+            {rankings.every((r) => r.gamesPlayed === 0) ? (
+              <Card className="items-center gap-3 p-8 text-center">
+                <p className="text-sm text-muted-foreground">
+                  No games logged for this group yet — rankings show up once someone does.
+                </p>
+                <ButtonLink href="/log" size="sm">
+                  Log a game
+                </ButtonLink>
+              </Card>
+            ) : (
+              <ul className="flex flex-col gap-1.5">
+                {rankings.map((r, i) => (
+                  <li
+                    key={r.profileId}
+                    className="flex items-center gap-2.5 rounded-lg border border-border p-2.5"
+                  >
+                    <span className="w-5 shrink-0 text-center text-sm font-semibold text-muted-foreground">
+                      {r.gamesPlayed > 0 ? MEDALS[i] ?? i + 1 : "—"}
+                    </span>
+                    <Avatar size="sm">
+                      <AvatarImage src={r.avatarUrl ?? undefined} alt={r.name} />
+                      <AvatarFallback>{r.name.slice(0, 1).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    <span className="flex-1 text-sm font-medium">{r.name}</span>
+                    {r.gamesPlayed > 0 ? (
+                      <span className="text-sm text-muted-foreground">
+                        {r.wins}/{r.gamesPlayed} wins · {r.winRate}%
+                      </span>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">No games yet</span>
+                    )}
+                  </li>
+                ))}
+              </ul>
             )}
           </div>
         }

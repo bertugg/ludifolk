@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
-import { BellIcon, LogOutIcon, SearchIcon } from "lucide-react";
+import { BellIcon, LogOutIcon, SearchIcon, UserPlusIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -84,6 +84,10 @@ function toFeedItems(rows: ActivityRow[], userId: string, scope: "own" | "follow
     }));
 }
 
+function daysAgoIsoDate(days: number): string {
+  return new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
+
 function FeedList({ items, emptyTitle, emptyCta }: { items: FeedItem[]; emptyTitle: string; emptyCta?: ReactNode }) {
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-3 p-4">
@@ -131,6 +135,64 @@ export default async function Home() {
     : { data: [] };
   const friendsFeed = toFeedItems((friendsActivitiesRaw ?? []) as unknown as ActivityRow[], userId, "following");
 
+  const { data: myGroupRows } = await supabase.from("group_members").select("group_id").eq("profile_id", userId);
+  const myGroupIds = (myGroupRows ?? []).map((g) => g.group_id);
+  const trendingWindowStart = daysAgoIsoDate(14);
+
+  const { data: groupSessionsRaw } = myGroupIds.length
+    ? await supabase
+        .from("game_sessions")
+        .select(
+          `
+            id, created_at, played_at, location, notes, cooperative_outcome, cooperative_score,
+            creator:profiles!game_sessions_created_by_fkey ( username, display_name, avatar_url ),
+            game:games ( slug, title, image_url, scoring_type ),
+            participants:game_participants (
+              guest_name, score, position, is_winner, confirmation_status, profile_id,
+              profile:profiles!game_participants_profile_id_fkey ( username, display_name, avatar_url )
+            ),
+            likes ( profile_id ),
+            comments ( id )
+          `,
+        )
+        .in("group_id", myGroupIds)
+        .gte("played_at", trendingWindowStart)
+    : { data: [] };
+
+  const groupsFeed: FeedItem[] = (groupSessionsRaw ?? [])
+    .filter((s) => s.game !== null)
+    .map((s) => ({
+      id: s.id,
+      createdAt: s.created_at,
+      actorName: s.creator?.display_name || s.creator?.username || "Someone",
+      actorAvatarUrl: s.creator?.avatar_url ?? null,
+      session: {
+        id: s.id,
+        playedAt: s.played_at,
+        location: s.location,
+        notes: s.notes,
+        cooperativeOutcome: s.cooperative_outcome,
+        cooperativeScore: s.cooperative_score,
+        game: {
+          slug: s.game!.slug,
+          title: s.game!.title,
+          imageUrl: s.game!.image_url,
+          scoringType: s.game!.scoring_type,
+        },
+        participants: s.participants,
+        likeCount: s.likes.length,
+        likedByMe: s.likes.some((l) => l.profile_id === userId),
+        commentCount: s.comments.length,
+      },
+    }))
+    .sort((a, b) => {
+      const engagementA = a.session.likeCount + a.session.commentCount;
+      const engagementB = b.session.likeCount + b.session.commentCount;
+      if (engagementB !== engagementA) return engagementB - engagementA;
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    })
+    .slice(0, 20);
+
   return (
     <div className="flex flex-1 flex-col">
       <header className="sticky top-0 z-30 flex items-center justify-between border-b border-border bg-background/95 px-4 py-3 backdrop-blur">
@@ -138,6 +200,9 @@ export default async function Home() {
         <div className="flex items-center gap-1">
           <ButtonLink href="/games" variant="ghost" size="icon" aria-label="Search games">
             <SearchIcon className="size-5" />
+          </ButtonLink>
+          <ButtonLink href="/discover" variant="ghost" size="icon" aria-label="Discover people">
+            <UserPlusIcon className="size-5" />
           </ButtonLink>
           <ButtonLink
             href="/notifications"
@@ -170,6 +235,16 @@ export default async function Home() {
               followingIds.length === 0
                 ? "You're not following anyone yet."
                 : "No activity from people you follow yet."
+            }
+          />
+        }
+        groups={
+          <FeedList
+            items={groupsFeed}
+            emptyTitle={
+              myGroupIds.length === 0
+                ? "Join a group to see what's trending there."
+                : "No recent activity in your groups yet."
             }
           />
         }
