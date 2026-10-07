@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { Metadata } from "next";
+import { HeartIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -40,7 +41,6 @@ export async function generateMetadata({
     openGraph: {
       title: `${headline} — ${session.game.title}`,
       description,
-      images: session.game.image_url ? [session.game.image_url] : [],
     },
   };
 }
@@ -143,7 +143,7 @@ export default async function GameSessionPage({ params }: { params: Promise<{ id
     <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-4 p-4">
       <div className="flex items-center justify-between">
         <BackButton fallbackHref={`/games/${game.slug}`} />
-        <ShareButton title={`${game.title} — Boardly`} />
+        <ShareButton title={`${game.title} — Boardly`} referralSource={`game_session:${session.id}`} />
       </div>
 
       <div className="relative aspect-[2/1] w-full overflow-hidden rounded-xl bg-muted">
@@ -249,12 +249,19 @@ export default async function GameSessionPage({ params }: { params: Promise<{ id
         </div>
       )}
 
-      {auth.user && (
+      {auth.user ? (
         <LikeButton
           sessionId={session.id}
           initialCount={session.likes.length}
           initialLiked={session.likes.some((l) => l.profile_id === auth.user!.id)}
         />
+      ) : (
+        session.likes.length > 0 && (
+          <span className="flex w-fit items-center gap-1.5 px-3 py-1.5 text-sm text-muted-foreground">
+            <HeartIcon className="size-4" />
+            {session.likes.length}
+          </span>
+        )
       )}
 
       <div className="flex flex-col gap-3 border-t border-border pt-4">

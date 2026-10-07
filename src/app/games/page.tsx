@@ -1,9 +1,15 @@
 import Image from "next/image";
 import Link from "next/link";
+import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { BackButton } from "@/components/back-button";
 import { searchGames } from "@/lib/actions/search-games";
 import { GamesGrid } from "./games-grid";
+
+export const metadata: Metadata = {
+  title: "Browse games | Boardly",
+  description: "Search the board game catalog on Boardly.",
+};
 
 export default async function GamesPage() {
   const games = await searchGames("", 60);

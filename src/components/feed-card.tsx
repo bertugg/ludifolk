@@ -164,7 +164,13 @@ export function FeedCard({ item }: { item: FeedItem }) {
           {session.commentCount > 0 && session.commentCount}
         </span>
         <div className="ml-auto">
-          <ShareButton title={`${session.game.title} — Boardly`} path={sessionPath} variant="ghost" iconOnly />
+          <ShareButton
+            title={`${session.game.title} — Boardly`}
+            path={sessionPath}
+            referralSource={`game_session:${session.id}`}
+            variant="ghost"
+            iconOnly
+          />
         </div>
       </div>
     </Card>

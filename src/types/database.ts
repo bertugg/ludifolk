@@ -623,32 +623,41 @@ export type Database = {
       };
       profiles: {
         Row: {
+          activated_at: string | null;
           avatar_url: string | null;
           bio: string | null;
           created_at: string;
           display_name: string | null;
+          first_game_logged_at: string | null;
           id: string;
           privacy: string;
+          referral_source: string | null;
           updated_at: string;
           username: string;
         };
         Insert: {
+          activated_at?: string | null;
           avatar_url?: string | null;
           bio?: string | null;
           created_at?: string;
           display_name?: string | null;
+          first_game_logged_at?: string | null;
           id: string;
           privacy?: string;
+          referral_source?: string | null;
           updated_at?: string;
           username: string;
         };
         Update: {
+          activated_at?: string | null;
           avatar_url?: string | null;
           bio?: string | null;
           created_at?: string;
           display_name?: string | null;
+          first_game_logged_at?: string | null;
           id?: string;
           privacy?: string;
+          referral_source?: string | null;
           updated_at?: string;
           username?: string;
         };

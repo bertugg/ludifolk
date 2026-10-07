@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import type { Metadata } from "next";
 import { FlameIcon, Gamepad2Icon, MedalIcon, StarIcon, TrophyIcon, UsersIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -8,7 +9,33 @@ import { BackButton } from "@/components/back-button";
 import { ButtonLink } from "@/components/button-link";
 import { FollowButton } from "@/components/follow-button";
 import { ProfileTabs } from "@/components/profile-tabs";
+import { ShareButton } from "@/components/share-button";
 import { basicStats, headToHeadResult, longestWinStreak } from "@/lib/stats";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ username: string }>;
+}): Promise<Metadata> {
+  const { username } = await params;
+  const supabase = await createClient();
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("username, display_name, bio")
+    .eq("username", username)
+    .maybeSingle();
+
+  if (!profile) return { title: "Boardly" };
+
+  const name = profile.display_name || profile.username;
+  const description = profile.bio || `${name}'s board game activity on Boardly.`;
+
+  return {
+    title: `${name} (@${profile.username}) | Boardly`,
+    description,
+    openGraph: { title: `${name} on Boardly`, description },
+  };
+}
 
 export default async function ProfilePage({
   params,
@@ -242,8 +269,12 @@ export default async function ProfilePage({
 
   return (
     <div className="flex flex-1 flex-col">
-      <div className="p-2">
+      <div className="flex items-center justify-between p-2">
         <BackButton fallbackHref="/" />
+        <ShareButton
+          title={`${profile.display_name || profile.username} on Boardly`}
+          referralSource={`profile:${profile.username}`}
+        />
       </div>
       <div className="flex flex-1 flex-col items-center p-4 pt-0">
         <ProfileTabs

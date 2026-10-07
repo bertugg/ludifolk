@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 export function ShareButton({
   title,
   path,
+  referralSource,
   variant = "outline",
   size = "sm",
   iconOnly = false,
@@ -14,6 +15,8 @@ export function ShareButton({
   title: string;
   /** Path to share, e.g. "/game-session/123". Defaults to the current page. */
   path?: string;
+  /** Attribution tag for the referral funnel, e.g. "game_session:123". */
+  referralSource?: string;
   variant?: "outline" | "ghost";
   size?: "sm" | "default";
   iconOnly?: boolean;
@@ -24,7 +27,10 @@ export function ShareButton({
     e.preventDefault();
     e.stopPropagation();
 
-    const url = path ? `${window.location.origin}${path}` : window.location.href;
+    const base = path ? `${window.location.origin}${path}` : window.location.href;
+    const url = referralSource
+      ? `${base}${base.includes("?") ? "&" : "?"}ref=${encodeURIComponent(referralSource)}`
+      : base;
 
     if (navigator.share) {
       try {

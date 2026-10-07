@@ -1,11 +1,41 @@
 import Image from "next/image";
 import Link from "next/link";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Badge } from "@/components/ui/badge";
 import { BackButton } from "@/components/back-button";
 import { playerCountLabel, playtimeLabel, scoringTypeLabel } from "@/lib/games";
 import { basicStats, numericStats, positionStats } from "@/lib/stats";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const supabase = await createClient();
+  const { data: game } = await supabase
+    .from("games")
+    .select("title, description, image_url, publisher, year_published")
+    .eq("slug", slug)
+    .maybeSingle();
+
+  if (!game) return { title: "Boardly" };
+
+  const description =
+    game.description || [game.publisher, game.year_published].filter(Boolean).join(" · ") || "On Boardly.";
+
+  return {
+    title: `${game.title} | Boardly`,
+    description,
+    openGraph: {
+      title: game.title,
+      description,
+      images: game.image_url ? [game.image_url] : [],
+    },
+  };
+}
 
 export default async function GamePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;

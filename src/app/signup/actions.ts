@@ -1,6 +1,6 @@
 "use server";
 
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
@@ -15,11 +15,15 @@ export async function signup(
 
   const supabase = await createClient();
   const origin = (await headers()).get("origin");
+  const referralSource = (await cookies()).get("boardly_ref")?.value;
 
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    options: { emailRedirectTo: `${origin}/auth/confirm` },
+    options: {
+      emailRedirectTo: `${origin}/auth/confirm`,
+      data: referralSource ? { referral_source: referralSource } : undefined,
+    },
   });
 
   if (error) {
