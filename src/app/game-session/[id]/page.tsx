@@ -338,7 +338,7 @@ export default async function GameSessionPage({ params }: { params: Promise<{ id
         <div className="grid grid-cols-3 gap-2">
           {photoUrls.map((url, i) => (
             <div key={i} className="relative aspect-square overflow-hidden rounded-lg bg-muted">
-              <Image src={url} alt="" fill className="object-cover" sizes="224px" unoptimized />
+              <Image src={url} alt="" fill className="object-cover" sizes="224px" />
             </div>
           ))}
         </div>

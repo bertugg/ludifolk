@@ -1,7 +1,8 @@
 "use client";
 
-import { useActionState, useEffect, useId, useState } from "react";
+import { useActionState, useEffect, useId, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
+import { PlusIcon, XIcon } from "lucide-react";
 import { logGame, type LogGameFormState } from "./actions";
 import { Button } from "@/components/ui/button";
 import { ButtonLink } from "@/components/button-link";
@@ -15,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { GameCombobox } from "@/components/game-combobox";
 import { ScoreEntryFields } from "@/components/score-entry-fields";
 import { computeCategoryTotal, parseScoringSchema, playerCategories, teamCategories } from "@/lib/scoring";
+import { formatMegabytes, MAX_SESSION_PHOTOS, MAX_SESSION_PHOTO_BYTES } from "@/lib/photo-limits";
 import type { GameSummary } from "@/lib/actions/search-games";
 
 type Row = {
@@ -85,38 +87,163 @@ function memberLabel(m: GroupMember) {
   return m.display_name || m.username;
 }
 
+type PickedPhoto = { file: File; previewUrl: string };
+
+const DOWNSCALE_MAX_DIMENSION = 1600;
+const DOWNSCALE_QUALITY = 0.82;
+
+/**
+ * Re-encodes a photo to a bounded resolution/quality before it ever reaches
+ * the upload — storage and egress cost scale with what we keep, and a phone
+ * photo is routinely 10-50x bigger than the ~224px thumbnail it's displayed
+ * at. Falls back to the original file if decoding fails (e.g. an exotic
+ * format the browser can't decode) or if the "optimized" output somehow
+ * came out bigger.
+ */
+async function downscaleImage(file: File): Promise<File> {
+  const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" }).catch(() => null);
+  if (!bitmap) return file;
+
+  const scale = Math.min(1, DOWNSCALE_MAX_DIMENSION / Math.max(bitmap.width, bitmap.height));
+  const width = Math.round(bitmap.width * scale);
+  const height = Math.round(bitmap.height * scale);
+
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) {
+    bitmap.close();
+    return file;
+  }
+  ctx.drawImage(bitmap, 0, 0, width, height);
+  bitmap.close();
+
+  const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/webp", DOWNSCALE_QUALITY));
+  if (!blob || blob.size >= file.size) return file;
+
+  const newName = file.name.replace(/\.[^.]+$/, "") + ".webp";
+  return new File([blob], newName, { type: "image/webp" });
+}
+
 function PhotoPicker() {
-  const [previews, setPreviews] = useState<string[]>([]);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [photos, setPhotos] = useState<PickedPhoto[]>([]);
+  const [warning, setWarning] = useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     return () => {
-      previews.forEach((url) => URL.revokeObjectURL(url));
+      photos.forEach((p) => URL.revokeObjectURL(p.previewUrl));
     };
-  }, [previews]);
+  }, [photos]);
+
+  function syncInputFiles(next: PickedPhoto[]) {
+    const dataTransfer = new DataTransfer();
+    next.forEach((p) => dataTransfer.items.add(p.file));
+    if (inputRef.current) inputRef.current.files = dataTransfer.files;
+  }
+
+  async function handleFiles(fileList: FileList | null) {
+    const incoming = fileList ? Array.from(fileList) : [];
+    if (incoming.length === 0) return;
+
+    const rejections: string[] = [];
+    const okOriginals: File[] = [];
+    const remainingSlots = MAX_SESSION_PHOTOS - photos.length;
+
+    for (const file of incoming) {
+      if (file.size > MAX_SESSION_PHOTO_BYTES) {
+        rejections.push(
+          `"${file.name}" is too large (${formatMegabytes(file.size)}) — max is ${formatMegabytes(MAX_SESSION_PHOTO_BYTES)}.`,
+        );
+        continue;
+      }
+      if (okOriginals.length >= remainingSlots) {
+        rejections.push(`"${file.name}" was skipped — only ${MAX_SESSION_PHOTOS} photos allowed per post.`);
+        continue;
+      }
+      okOriginals.push(file);
+    }
+
+    setWarning(rejections.length > 0 ? rejections.join(" ") : null);
+    if (okOriginals.length === 0) {
+      // Nothing to add, but the native picker still wrote its (rejected)
+      // selection into the input's .files — restore our actual state.
+      syncInputFiles(photos);
+      return;
+    }
+
+    setIsProcessing(true);
+    const accepted: PickedPhoto[] = await Promise.all(
+      okOriginals.map(async (file) => {
+        const optimized = await downscaleImage(file);
+        return { file: optimized, previewUrl: URL.createObjectURL(optimized) };
+      }),
+    );
+    setIsProcessing(false);
+
+    const next = [...photos, ...accepted];
+    setPhotos(next);
+    syncInputFiles(next);
+  }
+
+  function removePhoto(index: number) {
+    setPhotos((prev) => {
+      const removed = prev[index];
+      if (removed) URL.revokeObjectURL(removed.previewUrl);
+      const next = prev.filter((_, i) => i !== index);
+      syncInputFiles(next);
+      return next;
+    });
+    setWarning(null);
+  }
 
   return (
     <div className="flex flex-col gap-1.5">
       <Label htmlFor="photos">Photos</Label>
-      <Input
+      <input
+        ref={inputRef}
         id="photos"
         name="photos"
         type="file"
         accept="image/*"
         multiple
-        onChange={(e) => {
-          previews.forEach((url) => URL.revokeObjectURL(url));
-          const files = e.target.files ? Array.from(e.target.files) : [];
-          setPreviews(files.map((f) => URL.createObjectURL(f)));
-        }}
+        className="sr-only"
+        onChange={(e) => handleFiles(e.target.files)}
       />
-      {previews.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {previews.map((src, i) => (
-            // eslint-disable-next-line @next/next/no-img-element -- local object URL, not a remote image
-            <img key={i} src={src} alt="" className="size-16 rounded-lg object-cover" />
-          ))}
-        </div>
-      )}
+      <div className="flex gap-2">
+        {photos.map((p, i) => (
+          <div key={p.previewUrl} className="relative size-16">
+            {/* eslint-disable-next-line @next/next/no-img-element -- local object URL, not a remote image */}
+            <img src={p.previewUrl} alt="" className="size-16 rounded-lg object-cover" />
+            <button
+              type="button"
+              onClick={() => removePhoto(i)}
+              aria-label="Remove photo"
+              className="absolute -right-1.5 -top-1.5 flex size-5 items-center justify-center rounded-full bg-foreground text-background"
+            >
+              <XIcon className="size-3" />
+            </button>
+          </div>
+        ))}
+        {photos.length < MAX_SESSION_PHOTOS && (
+          <button
+            type="button"
+            onClick={() => inputRef.current?.click()}
+            disabled={isProcessing}
+            aria-label="Add photo"
+            className="flex size-16 items-center justify-center rounded-lg border border-dashed border-border text-muted-foreground hover:border-foreground hover:text-foreground disabled:opacity-50"
+          >
+            <PlusIcon className="size-5" />
+          </button>
+        )}
+      </div>
+      {isProcessing && <p className="text-xs text-muted-foreground">Processing photo…</p>}
+      {warning && <p className="text-xs text-destructive">{warning}</p>}
+      <p className="text-xs text-muted-foreground">
+        Up to {MAX_SESSION_PHOTOS} photos, {formatMegabytes(MAX_SESSION_PHOTO_BYTES)} each.
+      </p>
     </div>
   );
 }
