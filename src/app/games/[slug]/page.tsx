@@ -21,13 +21,13 @@ export async function generateMetadata({
     .eq("slug", slug)
     .maybeSingle();
 
-  if (!game) return { title: "Boardly" };
+  if (!game) return { title: "Ludifolk" };
 
   const description =
-    game.description || [game.publisher, game.year_published].filter(Boolean).join(" · ") || "On Boardly.";
+    game.description || [game.publisher, game.year_published].filter(Boolean).join(" · ") || "On Ludifolk.";
 
   return {
-    title: `${game.title} | Boardly`,
+    title: `${game.title} | Ludifolk`,
     description,
     openGraph: {
       title: game.title,

@@ -14,10 +14,10 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { username } = await params;
   const data = await getWrappedData(username, currentYear());
-  if (!data) return { title: "Boardly" };
+  if (!data) return { title: "Ludifolk" };
 
   return {
-    title: `${data.name}'s ${data.year} Board Game Year | Boardly`,
+    title: `${data.name}'s ${data.year} Board Game Year | Ludifolk`,
     description: `${data.gamesPlayed} games, ${data.wins} wins, ${data.distinctOpponents} opponents.`,
   };
 }
@@ -49,7 +49,7 @@ export default async function WrappedPage({ params }: { params: Promise<{ userna
       <div className="flex items-center justify-between">
         <BackButton fallbackHref={`/profile/${profile.username}`} />
         <ShareButton
-          title={`${name}'s ${year} Board Game Year — Boardly`}
+          title={`${name}'s ${year} Board Game Year — Ludifolk`}
           referralSource={`wrapped:${profile.username}`}
         />
       </div>

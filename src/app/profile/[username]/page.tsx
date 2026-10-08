@@ -25,15 +25,15 @@ export async function generateMetadata({
     .eq("username", username)
     .maybeSingle();
 
-  if (!profile) return { title: "Boardly" };
+  if (!profile) return { title: "Ludifolk" };
 
   const name = profile.display_name || profile.username;
-  const description = profile.bio || `${name}'s board game activity on Boardly.`;
+  const description = profile.bio || `${name}'s board game activity on Ludifolk.`;
 
   return {
-    title: `${name} (@${profile.username}) | Boardly`,
+    title: `${name} (@${profile.username}) | Ludifolk`,
     description,
-    openGraph: { title: `${name} on Boardly`, description },
+    openGraph: { title: `${name} on Ludifolk`, description },
   };
 }
 
@@ -272,7 +272,7 @@ export default async function ProfilePage({
       <div className="flex items-center justify-between p-2">
         <BackButton fallbackHref="/" />
         <ShareButton
-          title={`${profile.display_name || profile.username} on Boardly`}
+          title={`${profile.display_name || profile.username} on Ludifolk`}
           referralSource={`profile:${profile.username}`}
         />
       </div>

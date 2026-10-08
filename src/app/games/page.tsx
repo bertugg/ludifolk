@@ -7,8 +7,8 @@ import { searchGames } from "@/lib/actions/search-games";
 import { GamesGrid } from "./games-grid";
 
 export const metadata: Metadata = {
-  title: "Browse games | Boardly",
-  description: "Search the board game catalog on Boardly.",
+  title: "Browse games | Ludifolk",
+  description: "Search the board game catalog on Ludifolk.",
 };
 
 export default async function GamesPage() {

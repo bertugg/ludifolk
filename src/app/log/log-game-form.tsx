@@ -407,7 +407,7 @@ function LogGameFormInner({
                 ) : (
                   <Input
                     name={`participant-${row.id}-name`}
-                    placeholder={isSelf ? ownDisplayName || ownUsername : "Name or Boardly username"}
+                    placeholder={isSelf ? ownDisplayName || ownUsername : "Name or Ludifolk username"}
                     value={row.name}
                     onChange={(e) => updateRow(row.id, { name: e.target.value })}
                     className="flex-1"

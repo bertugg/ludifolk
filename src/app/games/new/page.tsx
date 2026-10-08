@@ -18,7 +18,7 @@ export default async function NewGamePage() {
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle className="text-xl">Add a game</CardTitle>
-          <CardDescription>Not in Boardly yet? Add it to the catalog.</CardDescription>
+          <CardDescription>Not in Ludifolk yet? Add it to the catalog.</CardDescription>
         </CardHeader>
         <CardContent>
           <NewGameForm />

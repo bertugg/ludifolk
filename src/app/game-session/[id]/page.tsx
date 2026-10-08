@@ -26,7 +26,7 @@ export async function generateMetadata({
   const session = await getSessionData(id);
 
   if (!session || !session.game) {
-    return { title: "Boardly" };
+    return { title: "Ludifolk" };
   }
 
   const players = sortParticipants(session.participants);
@@ -37,7 +37,7 @@ export async function generateMetadata({
   const description = `${session.game.title} with ${playerNames}`;
 
   return {
-    title: `${headline} — ${session.game.title} | Boardly`,
+    title: `${headline} — ${session.game.title} | Ludifolk`,
     description,
     openGraph: {
       title: `${headline} — ${session.game.title}`,
@@ -159,7 +159,7 @@ export default async function GameSessionPage({ params }: { params: Promise<{ id
               <PencilIcon className="size-4" />
             </ButtonLink>
           )}
-          <ShareButton title={`${game.title} — Boardly`} referralSource={`game_session:${session.id}`} />
+          <ShareButton title={`${game.title} — Ludifolk`} referralSource={`game_session:${session.id}`} />
         </div>
       </div>
 
@@ -393,10 +393,10 @@ export default async function GameSessionPage({ params }: { params: Promise<{ id
         ) : (
           <Card className="items-center gap-2 p-4 text-center">
             <p className="text-sm text-muted-foreground">
-              Join Boardly to like this, comment, and log your own game nights.
+              Join Ludifolk to like this, comment, and log your own game nights.
             </p>
             <ButtonLink href="/signup" size="sm">
-              Join Boardly
+              Join Ludifolk
             </ButtonLink>
           </Card>
         )}

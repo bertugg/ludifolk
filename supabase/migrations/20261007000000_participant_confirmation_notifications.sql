@@ -1,4 +1,4 @@
--- When a session creator adds another Boardly user as a participant, that
+-- When a session creator adds another Ludifolk user as a participant, that
 -- user needs to find out and confirm/decline (step 9, Participant
 -- Confirmation). Direct client inserts into `notifications` are blocked by
 -- RLS (no insert policy — see the init migration's comment on that table),

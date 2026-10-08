@@ -15,7 +15,7 @@ export async function signup(
 
   const supabase = await createClient();
   const origin = (await headers()).get("origin");
-  const referralSource = (await cookies()).get("boardly_ref")?.value;
+  const referralSource = (await cookies()).get("ludifolk_ref")?.value;
 
   const { data, error } = await supabase.auth.signUp({
     email,

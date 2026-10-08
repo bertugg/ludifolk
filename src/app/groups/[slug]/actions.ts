@@ -30,7 +30,7 @@ export async function inviteMember(
     .maybeSingle();
 
   if (!profile) {
-    return { error: `No Boardly user found with username "${username}".` };
+    return { error: `No Ludifolk user found with username "${username}".` };
   }
 
   const { data: existingMember } = await supabase

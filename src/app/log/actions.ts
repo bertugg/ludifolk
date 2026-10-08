@@ -136,7 +136,7 @@ export async function logGame(
     groupId = membership ? rawGroupId : null;
   }
 
-  // Resolve each name to an existing Boardly user (exact username match) or
+  // Resolve each name to an existing Ludifolk user (exact username match) or
   // treat it as a guest. No search/autocomplete yet — that's Game Search.
   const usedProfileIds = new Set<string>();
   const resolved: {

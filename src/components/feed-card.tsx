@@ -165,7 +165,7 @@ export function FeedCard({ item }: { item: FeedItem }) {
         </span>
         <div className="ml-auto">
           <ShareButton
-            title={`${session.game.title} — Boardly`}
+            title={`${session.game.title} — Ludifolk`}
             path={sessionPath}
             referralSource={`game_session:${session.id}`}
             variant="ghost"

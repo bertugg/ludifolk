@@ -2,7 +2,7 @@ import { ImageResponse } from "next/og";
 import { participantDisplayName, sessionHeadline, sortParticipants } from "@/lib/session-display";
 import { getSessionData } from "./data";
 
-export const alt = "Boardly game result";
+export const alt = "Ludifolk game result";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -31,7 +31,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
             fontWeight: 700,
           }}
         >
-          Boardly
+          Ludifolk
         </div>
       ),
       size,
@@ -58,7 +58,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
       >
         <div style={{ display: "flex", flexDirection: "column", flex: 1, justifyContent: "space-between" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            <div style={{ display: "flex", fontSize: 32, fontWeight: 700, color: TERRACOTTA }}>Boardly</div>
+            <div style={{ display: "flex", fontSize: 32, fontWeight: 700, color: TERRACOTTA }}>Ludifolk</div>
             <div style={{ display: "flex", fontSize: 28, color: CHARCOAL, opacity: 0.7 }}>{game.title}</div>
           </div>
 

@@ -1,4 +1,4 @@
--- Boardly — Phase 1 schema
+-- Ludifolk — Phase 1 schema
 -- Covers: profiles, game catalog, game sessions/participants (the logging core),
 -- feed (activities, likes, comments), notifications (needed for participant
 -- confirmation), and photos.
@@ -125,7 +125,7 @@ create index idx_game_sessions_played_at on public.game_sessions (played_at desc
 
 -- ───────────────────────────── game_participants ─────────────────────────────
 -- A single person's participation in a session. `profile_id` is null for
--- guests who aren't on Boardly yet (identified by `guest_name` instead) —
+-- guests who aren't on Ludifolk yet (identified by `guest_name` instead) —
 -- guests are auto-confirmed since they can't confirm themselves.
 
 create table public.game_participants (

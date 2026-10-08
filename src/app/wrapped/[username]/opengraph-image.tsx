@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 import { getWrappedData } from "./data";
 
-export const alt = "Boardly year in review";
+export const alt = "Ludifolk year in review";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -34,7 +34,7 @@ export default async function Image({ params }: { params: Promise<{ username: st
             fontWeight: 700,
           }}
         >
-          Boardly
+          Ludifolk
         </div>
       ),
       size,

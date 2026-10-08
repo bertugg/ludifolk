@@ -2,7 +2,7 @@ import { ImageResponse } from "next/og";
 import { createClient } from "@/lib/supabase/server";
 import { basicStats } from "@/lib/stats";
 
-export const alt = "Boardly profile";
+export const alt = "Ludifolk profile";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -37,7 +37,7 @@ export default async function Image({ params }: { params: Promise<{ username: st
             fontWeight: 700,
           }}
         >
-          Boardly
+          Ludifolk
         </div>
       ),
       size,
@@ -66,7 +66,7 @@ export default async function Image({ params }: { params: Promise<{ username: st
           padding: 64,
         }}
       >
-        <div style={{ display: "flex", fontSize: 32, fontWeight: 700, color: TERRACOTTA }}>Boardly</div>
+        <div style={{ display: "flex", fontSize: 32, fontWeight: 700, color: TERRACOTTA }}>Ludifolk</div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {profile.avatar_url ? (

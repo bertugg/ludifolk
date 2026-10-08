@@ -57,8 +57,8 @@ export async function updateSession(request: NextRequest) {
   // where they came from, read back at signup. Only set once per visitor,
   // and only for people who aren't already signed in.
   const ref = request.nextUrl.searchParams.get("ref");
-  if (!data.user && ref && !request.cookies.get("boardly_ref")) {
-    supabaseResponse.cookies.set("boardly_ref", ref, {
+  if (!data.user && ref && !request.cookies.get("ludifolk_ref")) {
+    supabaseResponse.cookies.set("ludifolk_ref", ref, {
       maxAge: 60 * 60 * 24 * 30,
       sameSite: "lax",
     });

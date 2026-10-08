@@ -22,7 +22,7 @@ const fraunces = Fraunces({
 });
 
 export const metadata: Metadata = {
-  title: "Boardly",
+  title: "Ludifolk",
   description: "Log what happened at game night.",
 };
 

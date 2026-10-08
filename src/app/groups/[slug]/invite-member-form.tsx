@@ -32,7 +32,7 @@ export function InviteMemberForm({ groupId }: { groupId: string }) {
     <form ref={formRef} action={formAction} className="flex flex-col gap-2">
       <input type="hidden" name="group_id" value={groupId} />
       <div className="flex gap-2">
-        <Input name="username" placeholder="Boardly username" className="flex-1" />
+        <Input name="username" placeholder="Ludifolk username" className="flex-1" />
         <SubmitButton />
       </div>
       {state && "error" in state && <p className="text-sm text-destructive">{state.error}</p>}
