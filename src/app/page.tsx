@@ -10,6 +10,7 @@ import { FeedCard, type FeedItem } from "@/components/feed-card";
 import { FeedTabs } from "@/components/feed-tabs";
 import type { ParticipantForDisplay } from "@/lib/session-display";
 import { sessionPhotoUrls, signFeedPhotos } from "@/lib/feed-photos";
+import { hasPlaceholderUsername } from "@/lib/username";
 import { signOut } from "./actions";
 
 const ACTIVITY_SELECT = `
@@ -125,7 +126,8 @@ export default async function Home() {
   }
   const userId = data.user.id;
 
-  const [{ count: pendingCount }, { data: activitiesRaw }, { data: followingRows }] = await Promise.all([
+  const [{ data: profile }, { count: pendingCount }, { data: activitiesRaw }, { data: followingRows }] = await Promise.all([
+    supabase.from("profiles").select("username").eq("id", userId).single(),
     supabase
       .from("notifications")
       .select("id", { count: "exact", head: true })
@@ -134,6 +136,12 @@ export default async function Home() {
     supabase.from("activities").select(ACTIVITY_SELECT).order("created_at", { ascending: false }).limit(20),
     supabase.from("follows").select("following_id").eq("follower_id", userId),
   ]);
+
+  // New accounts (including ones arriving from the email confirmation link)
+  // pick a username before anything else.
+  if (profile && hasPlaceholderUsername(userId, profile.username)) {
+    redirect("/welcome");
+  }
 
   const activities = (activitiesRaw ?? []) as unknown as ActivityRow[];
 

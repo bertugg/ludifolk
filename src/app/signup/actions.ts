@@ -33,7 +33,7 @@ export async function signup(
   // Email confirmations disabled (e.g. local dev) — Supabase returns a
   // session immediately rather than requiring a confirmation click.
   if (data.session) {
-    redirect("/");
+    redirect("/welcome");
   }
 
   return { message: "Check your email to confirm your account." };
