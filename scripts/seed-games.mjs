@@ -16,6 +16,7 @@
 // enrich any existing row (by slug) with fresher data.
 
 import { createClient } from "@supabase/supabase-js";
+import { SCORING_SCHEMAS } from "./scoring-schemas.mjs";
 
 function slugify(input) {
   return input
@@ -169,9 +170,18 @@ async function main() {
         categories,
         mechanics,
         scoring_type: scoringType,
+        // Always written (null when absent) — scoring-schemas.mjs is the
+        // source of truth, so a schema removed there is removed here too.
+        scoring_schema: SCORING_SCHEMAS[slug] ?? null,
       };
     },
   );
+
+  const unknownSchemaSlugs = Object.keys(SCORING_SCHEMAS).filter((slug) => !seenSlugs.has(slug));
+  if (unknownSchemaSlugs.length > 0) {
+    console.error(`scoring-schemas.mjs has entries for unknown slugs: ${unknownSchemaSlugs.join(", ")}`);
+    process.exit(1);
+  }
 
   console.log(`Upserting ${rows.length} games...`);
   const { data, error } = await supabase.from("games").upsert(rows, { onConflict: "slug" }).select("slug");
@@ -181,7 +191,7 @@ async function main() {
     process.exit(1);
   }
 
-  console.log(`Done. Upserted ${data.length} games.`);
+  console.log(`Done. Upserted ${data.length} games (${Object.keys(SCORING_SCHEMAS).length} with scoring schemas).`);
   console.log("image_url is null for all rows — see the comment at the top of this file.");
 }
 
