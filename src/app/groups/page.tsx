@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { BackButton } from "@/components/back-button";
+import { AppHomeLink } from "@/components/app-home-link";
 import { ButtonLink } from "@/components/button-link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
@@ -31,7 +31,7 @@ export default async function GroupsPage() {
     <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-4 p-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <BackButton fallbackHref="/" />
+          <AppHomeLink />
           <h1 className="font-heading text-xl font-semibold">Groups</h1>
         </div>
         <ButtonLink href="/groups/new" size="sm">

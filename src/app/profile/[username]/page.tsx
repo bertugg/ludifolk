@@ -5,7 +5,7 @@ import { FlameIcon, Gamepad2Icon, MedalIcon, StarIcon, TrophyIcon, UsersIcon } f
 import { createClient } from "@/lib/supabase/server";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
-import { BackButton } from "@/components/back-button";
+import { AppHomeLink } from "@/components/app-home-link";
 import { ButtonLink } from "@/components/button-link";
 import { FollowButton } from "@/components/follow-button";
 import { ProfileTabs } from "@/components/profile-tabs";
@@ -58,7 +58,7 @@ export default async function ProfilePage({
     return (
       <div className="flex flex-1 flex-col">
         <div className="p-2">
-          <BackButton fallbackHref="/" />
+          <AppHomeLink />
         </div>
         <div className="flex flex-1 items-center justify-center p-4 pt-0">
           <p className="text-sm text-muted-foreground">
@@ -270,7 +270,7 @@ export default async function ProfilePage({
   return (
     <div className="flex flex-1 flex-col">
       <div className="flex items-center justify-between p-2">
-        <BackButton fallbackHref="/" />
+        <AppHomeLink />
         <ShareButton
           title={`${profile.display_name || profile.username} on Ludifolk`}
           referralSource={`profile:${profile.username}`}

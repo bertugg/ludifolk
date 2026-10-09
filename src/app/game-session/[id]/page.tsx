@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { BackButton } from "@/components/back-button";
+import { AppHomeLink } from "@/components/app-home-link";
 import { ButtonLink } from "@/components/button-link";
 import { LikeButton } from "@/components/like-button";
 import { ShareButton } from "@/components/share-button";
@@ -66,7 +66,7 @@ export default async function GameSessionPage({ params }: { params: Promise<{ id
     return (
       <div className="flex flex-1 flex-col">
         <div className="p-2">
-          <BackButton fallbackHref="/" />
+          <AppHomeLink />
         </div>
         <div className="flex flex-1 items-center justify-center p-4 pt-0">
           <p className="text-sm text-muted-foreground">
@@ -155,7 +155,7 @@ export default async function GameSessionPage({ params }: { params: Promise<{ id
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-4 p-4">
       <div className="flex items-center justify-between">
-        <BackButton fallbackHref={`/games/${game.slug}`} />
+        <AppHomeLink />
         <div className="flex items-center gap-1">
           {isCreator && (
             <ButtonLink href={`/game-session/${session.id}/edit`} variant="ghost" size="icon" aria-label="Edit result">
