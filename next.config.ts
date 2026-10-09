@@ -21,14 +21,9 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  experimental: {
-    serverActions: {
-      // Default is 1MB, which the game-log form's photo uploads blow past
-      // on any real phone photo. 35MB covers 3 photos at the form's 10MB
-      // per-photo cap plus the rest of the form fields with headroom.
-      bodySizeLimit: "35mb",
-    },
-  },
+  // No serverActions.bodySizeLimit override: photos and avatars upload
+  // straight from the browser to Supabase Storage, so server action bodies
+  // stay small (and the host caps them anyway — 4.5MB on Vercel).
 };
 
 export default nextConfig;

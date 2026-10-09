@@ -2,7 +2,9 @@
 
 import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
-import { updateProfile } from "./actions";
+import { updateProfile, type ProfileFormState } from "./actions";
+import { downscaleImage } from "@/lib/downscale-image";
+import { createClient } from "@/lib/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,8 +29,40 @@ function SubmitButton() {
   );
 }
 
+const AVATAR_MAX_DIMENSION = 512;
+
+/**
+ * Uploads straight from the browser to Storage rather than through the
+ * updateProfile server action, whose body is capped by the host (4.5MB on
+ * Vercel). The avatars RLS policies restrict writes to the user's own folder.
+ */
+async function uploadAvatar(file: File): Promise<{ path: string } | { error: string }> {
+  const supabase = createClient();
+  const { data: auth } = await supabase.auth.getUser();
+  if (!auth.user) return { error: "You're signed out — sign in and try again." };
+
+  const optimized = await downscaleImage(file, AVATAR_MAX_DIMENSION);
+  const ext = optimized.name.split(".").pop() || "jpg";
+  const path = `${auth.user.id}/avatar.${ext}`;
+  const { error } = await supabase.storage
+    .from("avatars")
+    .upload(path, optimized, { upsert: true, contentType: optimized.type });
+  return error ? { error: error.message } : { path };
+}
+
+async function updateProfileWithAvatar(prevState: ProfileFormState, formData: FormData): Promise<ProfileFormState> {
+  const avatarFile = formData.get("avatar");
+  formData.delete("avatar");
+  if (avatarFile instanceof File && avatarFile.size > 0) {
+    const result = await uploadAvatar(avatarFile);
+    if ("error" in result) return { error: result.error };
+    formData.set("avatar_path", result.path);
+  }
+  return updateProfile(prevState, formData);
+}
+
 export function ProfileForm({ profile }: { profile: Profile }) {
-  const [state, formAction] = useActionState(updateProfile, null);
+  const [state, formAction] = useActionState(updateProfileWithAvatar, null);
   const [avatarPreview, setAvatarPreview] = useState(profile.avatar_url);
 
   return (
