@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useId, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
+import { useRouter } from "next/navigation";
 import { PlusIcon, XIcon } from "lucide-react";
 import { logGame, type LogGameFormState } from "./actions";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { GameCombobox } from "@/components/game-combobox";
 import { MentionTextarea } from "@/components/mention-textarea";
+import { PlayerNameInput, type PlayerSuggestion } from "@/components/player-name-input";
 import { ScoreEntryFields } from "@/components/score-entry-fields";
 import { computeCategoryTotal, parseScoringSchema, playerCategories, teamCategories } from "@/lib/scoring";
 import { formatMegabytes, MAX_SESSION_PHOTOS, MAX_SESSION_PHOTO_BYTES } from "@/lib/photo-limits";
@@ -298,11 +300,13 @@ export function LogGameForm({
   ownUsername,
   ownDisplayName,
   groups,
+  following,
 }: {
   initialGames: GameSummary[];
   ownUsername: string;
   ownDisplayName: string | null;
   groups: Group[];
+  following: PlayerSuggestion[];
 }) {
   const [attempt, setAttempt] = useState(0);
   return (
@@ -312,6 +316,7 @@ export function LogGameForm({
       ownUsername={ownUsername}
       ownDisplayName={ownDisplayName}
       groups={groups}
+      following={following}
       onLogAnother={() => setAttempt((a) => a + 1)}
     />
   );
@@ -322,14 +327,17 @@ function LogGameFormInner({
   ownUsername,
   ownDisplayName,
   groups,
+  following,
   onLogAnother,
 }: {
   initialGames: GameSummary[];
   ownUsername: string;
   ownDisplayName: string | null;
   groups: Group[];
+  following: PlayerSuggestion[];
   onLogAnother: () => void;
 }) {
+  const router = useRouter();
   const [state, formAction] = useActionState(logGameWithPhotos, null);
   const selfRowId = useId();
   const [selectedGame, setSelectedGame] = useState<GameSummary | null>(null);
@@ -342,6 +350,14 @@ function LogGameFormInner({
   const schema = parseScoringSchema(selectedGame?.scoring_schema);
   const playerCats = playerCategories(schema);
   const teamCats = teamCategories(schema);
+
+  const createdSessionId = state && "success" in state ? state.success.sessionId : null;
+  const hadFailedPhotos = !!(state && "success" in state && state.success.failedPhotos);
+  useEffect(() => {
+    // Land on the new result right away. replace(), so Back skips the spent
+    // form. Failed photo uploads stay on the summary so the warning is seen.
+    if (createdSessionId && !hadFailedPhotos) router.replace(`/game-session/${createdSessionId}`);
+  }, [createdSessionId, hadFailedPhotos, router]);
 
   if (state && "success" in state) {
     return <SuccessView state={state} onLogAnother={onLogAnother} />;
@@ -446,11 +462,14 @@ function LogGameFormInner({
                     </SelectContent>
                   </Select>
                 ) : (
-                  <Input
+                  <PlayerNameInput
                     name={`participant-${row.id}-name`}
                     placeholder={isSelf ? ownDisplayName || ownUsername : "Name or Ludifolk username"}
                     value={row.name}
-                    onChange={(e) => updateRow(row.id, { name: e.target.value })}
+                    onChange={(name) => updateRow(row.id, { name })}
+                    suggestions={following.filter(
+                      (f) => f.username === row.name.toLowerCase() || !usedNames.has(f.username.toLowerCase()),
+                    )}
                     className="flex-1"
                   />
                 )}
