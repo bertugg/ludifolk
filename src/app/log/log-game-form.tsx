@@ -17,6 +17,8 @@ import { GameCombobox } from "@/components/game-combobox";
 import { ScoreEntryFields } from "@/components/score-entry-fields";
 import { computeCategoryTotal, parseScoringSchema, playerCategories, teamCategories } from "@/lib/scoring";
 import { formatMegabytes, MAX_SESSION_PHOTOS, MAX_SESSION_PHOTO_BYTES } from "@/lib/photo-limits";
+import { downscaleImage } from "@/lib/downscale-image";
+import { createClient } from "@/lib/supabase/client";
 import type { GameSummary } from "@/lib/actions/search-games";
 
 type Row = {
@@ -70,6 +72,11 @@ function SuccessView({
             Team {success.cooperativeOutcome === "win" ? "won" : "lost"}
           </Badge>
         )}
+        {success.failedPhotos ? (
+          <p className="text-xs text-destructive">
+            {success.failedPhotos === 1 ? "1 photo" : `${success.failedPhotos} photos`} couldn&apos;t be uploaded.
+          </p>
+        ) : null}
         <div className="flex gap-2 pt-1">
           <Button type="button" variant="outline" className="flex-1" onClick={onLogAnother}>
             Log another
@@ -90,40 +97,55 @@ function memberLabel(m: GroupMember) {
 type PickedPhoto = { file: File; previewUrl: string };
 
 const DOWNSCALE_MAX_DIMENSION = 1600;
-const DOWNSCALE_QUALITY = 0.82;
 
 /**
- * Re-encodes a photo to a bounded resolution/quality before it ever reaches
- * the upload — storage and egress cost scale with what we keep, and a phone
- * photo is routinely 10-50x bigger than the ~224px thumbnail it's displayed
- * at. Falls back to the original file if decoding fails (e.g. an exotic
- * format the browser can't decode) or if the "optimized" output somehow
- * came out bigger.
+ * Uploads straight from the browser to Storage rather than through the
+ * logGame server action — server action bodies are capped by the host
+ * (4.5MB on Vercel), which even a few downscaled photos can exceed. The
+ * session-photos and photos RLS policies enforce the same access rules the
+ * action did. Returns how many photos failed.
  */
-async function downscaleImage(file: File): Promise<File> {
-  const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" }).catch(() => null);
-  if (!bitmap) return file;
+async function uploadSessionPhotos(sessionId: string, files: File[]): Promise<number> {
+  const supabase = createClient();
+  const { data: auth } = await supabase.auth.getUser();
+  if (!auth.user) return files.length;
+  const userId = auth.user.id;
 
-  const scale = Math.min(1, DOWNSCALE_MAX_DIMENSION / Math.max(bitmap.width, bitmap.height));
-  const width = Math.round(bitmap.width * scale);
-  const height = Math.round(bitmap.height * scale);
+  const results = await Promise.all(
+    files.map(async (file) => {
+      const path = `${sessionId}/${crypto.randomUUID()}`;
+      const { error: uploadError } = await supabase.storage.from("session-photos").upload(path, file, {
+        contentType: file.type,
+      });
+      if (uploadError) return false;
+      const { error: insertError } = await supabase.from("photos").insert({
+        game_session_id: sessionId,
+        uploaded_by: userId,
+        storage_path: path,
+      });
+      if (insertError) {
+        // e.g. the per-session photo cap — don't leave an orphaned object.
+        await supabase.storage.from("session-photos").remove([path]);
+        return false;
+      }
+      return true;
+    }),
+  );
+  return results.filter((ok) => !ok).length;
+}
 
-  const canvas = document.createElement("canvas");
-  canvas.width = width;
-  canvas.height = height;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) {
-    bitmap.close();
-    return file;
-  }
-  ctx.drawImage(bitmap, 0, 0, width, height);
-  bitmap.close();
+async function logGameWithPhotos(prevState: LogGameFormState, formData: FormData): Promise<LogGameFormState> {
+  const photos = formData
+    .getAll("photos")
+    .filter((f): f is File => f instanceof File && f.size > 0 && f.size <= MAX_SESSION_PHOTO_BYTES)
+    .slice(0, MAX_SESSION_PHOTOS);
+  formData.delete("photos");
 
-  const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/webp", DOWNSCALE_QUALITY));
-  if (!blob || blob.size >= file.size) return file;
+  const result = await logGame(prevState, formData);
+  if (!result || !("success" in result) || photos.length === 0) return result;
 
-  const newName = file.name.replace(/\.[^.]+$/, "") + ".webp";
-  return new File([blob], newName, { type: "image/webp" });
+  const failedPhotos = await uploadSessionPhotos(result.success.sessionId, photos);
+  return failedPhotos > 0 ? { success: { ...result.success, failedPhotos } } : result;
 }
 
 function PhotoPicker() {
@@ -177,7 +199,7 @@ function PhotoPicker() {
     setIsProcessing(true);
     const accepted: PickedPhoto[] = await Promise.all(
       okOriginals.map(async (file) => {
-        const optimized = await downscaleImage(file);
+        const optimized = await downscaleImage(file, DOWNSCALE_MAX_DIMENSION);
         return { file: optimized, previewUrl: URL.createObjectURL(optimized) };
       }),
     );
@@ -289,7 +311,7 @@ function LogGameFormInner({
   groups: Group[];
   onLogAnother: () => void;
 }) {
-  const [state, formAction] = useActionState(logGame, null);
+  const [state, formAction] = useActionState(logGameWithPhotos, null);
   const selfRowId = useId();
   const [selectedGame, setSelectedGame] = useState<GameSummary | null>(null);
   const [groupId, setGroupId] = useState("none");

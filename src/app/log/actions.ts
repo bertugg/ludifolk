@@ -3,7 +3,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { computeCategoryTotal, parseScoringSchema, playerCategories, teamCategories } from "@/lib/scoring";
-import { MAX_SESSION_PHOTOS, MAX_SESSION_PHOTO_BYTES } from "@/lib/photo-limits";
 
 type ParticipantResult = {
   name: string;
@@ -20,6 +19,8 @@ export type LogGameFormState =
         gameTitle: string;
         players: ParticipantResult[];
         cooperativeOutcome: "win" | "loss" | null;
+        // Set client-side when some of the direct-to-Storage photo uploads fail.
+        failedPhotos?: number;
       };
     }
   | null;
@@ -273,24 +274,8 @@ export async function logGame(
     game_session_id: session.id,
   });
 
-  const photoFiles = formData
-    .getAll("photos")
-    .filter((f): f is File => f instanceof File && f.size > 0 && f.size <= MAX_SESSION_PHOTO_BYTES)
-    .slice(0, MAX_SESSION_PHOTOS);
-  for (const file of photoFiles) {
-    const path = `${session.id}/${crypto.randomUUID()}`;
-    const { error: uploadError } = await supabase.storage.from("session-photos").upload(path, file, {
-      contentType: file.type,
-    });
-    if (!uploadError) {
-      await supabase.from("photos").insert({
-        game_session_id: session.id,
-        uploaded_by: auth.user.id,
-        storage_path: path,
-      });
-    }
-  }
-
+  // Photos are uploaded by the client after this returns — see
+  // uploadSessionPhotos in log-game-form.tsx.
   return {
     success: {
       sessionId: session.id,

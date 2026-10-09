@@ -24,7 +24,7 @@ export async function updateProfile(
   const displayName = String(formData.get("display_name") ?? "").trim();
   const bio = String(formData.get("bio") ?? "").trim();
   const isPrivate = formData.get("privacy") === "on";
-  const avatarFile = formData.get("avatar");
+  const avatarPath = String(formData.get("avatar_path") ?? "");
 
   if (!USERNAME_PATTERN.test(username)) {
     return {
@@ -33,18 +33,13 @@ export async function updateProfile(
   }
 
   let avatarUrl: string | undefined;
-  if (avatarFile instanceof File && avatarFile.size > 0) {
-    const ext = avatarFile.name.split(".").pop() || "jpg";
-    const path = `${auth.user.id}/avatar.${ext}`;
-    const { error: uploadError } = await supabase.storage
-      .from("avatars")
-      .upload(path, avatarFile, { upsert: true, contentType: avatarFile.type });
-
-    if (uploadError) {
-      return { error: uploadError.message };
+  if (avatarPath) {
+    // The file itself was uploaded by the client (see profile-form.tsx);
+    // only accept a path inside the caller's own avatar folder.
+    if (!avatarPath.startsWith(`${auth.user.id}/`)) {
+      return { error: "Invalid avatar upload." };
     }
-
-    const { data: publicUrl } = supabase.storage.from("avatars").getPublicUrl(path);
+    const { data: publicUrl } = supabase.storage.from("avatars").getPublicUrl(avatarPath);
     avatarUrl = `${publicUrl.publicUrl}?t=${Date.now()}`;
   }
 
