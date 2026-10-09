@@ -1,9 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
-import { CrownIcon, MessageCircleIcon, ShieldCheckIcon, XCircleIcon } from "lucide-react";
+import { CircleCheckIcon, CircleXIcon, CrownIcon, MessageSquareIcon } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
 import { LikeButton } from "@/components/like-button";
 import { MentionText } from "@/components/mention-text";
 import { ShareButton } from "@/components/share-button";
@@ -32,6 +30,8 @@ export type FeedItem = {
     likeCount: number;
     likedByMe: boolean;
     commentCount: number;
+    /** Signed thumbnail URLs, in upload order. */
+    photoUrls: string[];
   };
 };
 
@@ -52,106 +52,113 @@ export function FeedCard({ item }: { item: FeedItem }) {
   const winner = players.find((p) => p.is_winner);
   const otherPlayers = winner ? players.filter((p) => p !== winner) : players;
   const sessionPath = `/game-session/${session.id}`;
+  const won = session.cooperativeOutcome === "win";
+  // Four slots: show every photo when they fit, else three plus a "+N" tile.
+  const shownPhotos = session.photoUrls.length > 4 ? session.photoUrls.slice(0, 3) : session.photoUrls;
+  const hiddenPhotoCount = session.photoUrls.length - shownPhotos.length;
 
   return (
-    <Card className="gap-3 pb-3">
+    <article className="flex flex-col gap-3 py-4">
       <Link href={sessionPath} className="flex flex-col gap-3">
-        <div className="flex items-start justify-between px-4">
-          <div className="flex items-center gap-2">
-            <Avatar size="sm">
-              <AvatarImage src={item.actorAvatarUrl ?? undefined} alt={item.actorName} />
-              <AvatarFallback>{item.actorName.slice(0, 1).toUpperCase()}</AvatarFallback>
-            </Avatar>
-            <div>
-              <p className="text-sm">
-                <span className="font-medium text-foreground">
-                  {item.actorName}
-                  {players.length > 1 && `+${players.length - 1}`}
-                </span>{" "}
-                <span className="text-muted-foreground">played {session.game.title}</span>
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {relativeTime(item.createdAt)}
-                {session.location && ` · ${session.location}`}
-              </p>
-            </div>
+        <div className="flex items-center gap-3 px-4">
+          <Avatar size="lg">
+            <AvatarImage src={item.actorAvatarUrl ?? undefined} alt={item.actorName} />
+            <AvatarFallback>{item.actorName.slice(0, 1).toUpperCase()}</AvatarFallback>
+          </Avatar>
+          <div className="min-w-0">
+            <p className="font-heading text-[15px] leading-snug text-foreground">
+              <span className="font-semibold">
+                {item.actorName}
+                {players.length > 1 && `+${players.length - 1}`}
+              </span>{" "}
+              <span className="text-foreground/80">played</span>{" "}
+              <span className="font-semibold">{session.game.title}</span>
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {relativeTime(item.createdAt)}
+              {session.location && ` · ${session.location}`}
+            </p>
           </div>
         </div>
 
-        <div className="flex gap-3 px-4">
-          <div className="relative aspect-3/4 w-24 shrink-0 overflow-hidden rounded-xl bg-muted">
+        <div className="flex items-stretch gap-3 px-4">
+          <div className="relative aspect-square w-[44%] shrink-0 self-start overflow-hidden rounded-xl bg-muted shadow-sm">
             {session.game.imageUrl && (
               <Image
                 src={session.game.imageUrl}
                 alt={session.game.title}
                 fill
                 className="object-cover"
-                sizes="96px"
+                sizes="180px"
                 unoptimized
               />
             )}
           </div>
 
-          <div className="flex min-w-0 flex-1 flex-col gap-1.5 rounded-xl border border-border bg-background p-3">
+          <div className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-xl bg-card shadow-sm ring-1 ring-foreground/5">
             {isCooperative ? (
-              <>
-                <Badge
-                  variant={session.cooperativeOutcome === "win" ? "success" : "secondary"}
-                  className="w-fit gap-1"
-                >
-                  {session.cooperativeOutcome === "win" ? (
-                    <ShieldCheckIcon className="size-3" />
-                  ) : (
-                    <XCircleIcon className="size-3" />
+              <div className="flex flex-1 flex-col items-center justify-center gap-2 p-3 text-center">
+                <span
+                  className={cn(
+                    "flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium",
+                    won ? "bg-forest/10 text-forest" : "bg-destructive/10 text-destructive",
                   )}
-                  Mission {session.cooperativeOutcome === "win" ? "Success" : "Failed"}
-                </Badge>
+                >
+                  {won ? <CircleCheckIcon className="size-3.5" /> : <CircleXIcon className="size-3.5" />}
+                  Mission {won ? "Success" : "Failed"}
+                </span>
                 {session.cooperativeScore !== null && (
-                  <p className="font-heading text-3xl font-bold leading-none">
+                  <p className="text-4xl font-bold leading-none tracking-tight text-foreground">
                     {session.cooperativeScore}
                   </p>
                 )}
-                <div className="mt-1 flex -space-x-2">
+                <div className="flex flex-wrap justify-center gap-1.5">
                   {players.slice(0, 5).map((p, i) => (
-                    <Avatar key={i} size="sm" className="ring-2 ring-card">
+                    <Avatar key={i} className="size-7">
                       <AvatarImage src={p.profile?.avatar_url ?? undefined} alt={participantDisplayName(p)} />
-                      <AvatarFallback>{participantDisplayName(p).slice(0, 1).toUpperCase()}</AvatarFallback>
+                      <AvatarFallback className="text-xs">
+                        {participantDisplayName(p).slice(0, 1).toUpperCase()}
+                      </AvatarFallback>
                     </Avatar>
                   ))}
                 </div>
-              </>
+              </div>
             ) : (
               <>
                 {winner && (
-                  <>
-                    <span className="flex w-fit items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-                      <CrownIcon className="size-3" />
+                  <div className="flex flex-col gap-1 pb-2">
+                    <span className="flex w-fit items-center gap-1.5 rounded-xl bg-peach px-3 py-1 text-xs font-medium text-primary">
+                      <CrownIcon className="size-3.5 fill-gold text-gold" />
                       Winner
                     </span>
-                    <p className="truncate font-heading text-base font-semibold">{participantDisplayName(winner)}</p>
+                    <p className="truncate px-3 pt-1 text-sm font-semibold text-foreground">
+                      {participantDisplayName(winner)}
+                    </p>
                     {winner.score !== null && (
-                      <p className="flex items-baseline gap-1">
-                        <span className="font-heading text-3xl font-bold leading-none text-primary">
+                      <p className="flex items-baseline gap-1.5 px-3">
+                        <span className="text-4xl font-bold leading-none tracking-tight text-foreground">
                           {winner.score}
                         </span>
                         <span className="text-xs text-muted-foreground">points</span>
                       </p>
                     )}
-                  </>
+                  </div>
                 )}
                 {otherPlayers.length > 0 && (
                   <ul
                     className={cn(
-                      "flex flex-col gap-1.5 text-sm",
-                      winner && "mt-1 border-t border-border pt-2",
+                      "flex flex-col divide-y divide-border/60 text-sm",
+                      winner && "border-t border-border/60",
                     )}
                   >
                     {otherPlayers.map((p, i) => (
-                      <li key={i} className="flex items-center gap-2">
+                      <li key={i} className="flex items-center gap-2 px-3 py-1.5">
                         <MiniAvatar p={p} />
-                        <span className="min-w-0 flex-1 truncate text-foreground">{participantDisplayName(p)}</span>
+                        <span className="min-w-0 flex-1 truncate text-muted-foreground">
+                          {participantDisplayName(p)}
+                        </span>
                         {(p.score !== null || p.position !== null) && (
-                          <span className="font-medium tabular-nums text-foreground">
+                          <span className="font-semibold tabular-nums text-foreground">
                             {p.score !== null ? p.score : `#${p.position}`}
                           </span>
                         )}
@@ -163,20 +170,34 @@ export function FeedCard({ item }: { item: FeedItem }) {
             )}
           </div>
         </div>
-
       </Link>
 
       {/* Outside the card link: notes can contain @tag links, and links can't nest. */}
       {session.notes && (
-        <p className="px-4 text-sm italic text-muted-foreground">
+        <p className="px-4 font-heading text-[15px] italic text-foreground/90">
           &ldquo;<MentionText text={session.notes} />&rdquo;
         </p>
       )}
 
-      <div className="-mt-1 flex items-center gap-1 px-2.5">
+      {shownPhotos.length > 0 && (
+        <Link href={sessionPath} className="grid grid-cols-4 gap-2 px-4" aria-label="View photos">
+          {shownPhotos.map((url, i) => (
+            <div key={i} className="relative aspect-4/3 overflow-hidden rounded-lg bg-muted">
+              <Image src={url} alt="" fill className="object-cover" sizes="96px" />
+            </div>
+          ))}
+          {hiddenPhotoCount > 0 && (
+            <div className="flex aspect-4/3 items-center justify-center rounded-lg bg-muted text-sm font-medium text-foreground/70">
+              +{hiddenPhotoCount}
+            </div>
+          )}
+        </Link>
+      )}
+
+      <div className="-mt-1 flex items-center gap-1 px-2.5 text-foreground">
         <LikeButton sessionId={session.id} initialLiked={session.likedByMe} initialCount={session.likeCount} />
-        <span className="flex items-center gap-1 px-2.5 text-sm text-muted-foreground">
-          <MessageCircleIcon className="size-4" />
+        <span className="flex items-center gap-1.5 px-2.5 text-sm">
+          <MessageSquareIcon className="size-4" />
           {session.commentCount > 0 && session.commentCount}
         </span>
         <div className="ml-auto">
@@ -189,6 +210,6 @@ export function FeedCard({ item }: { item: FeedItem }) {
           />
         </div>
       </div>
-    </Card>
+    </article>
   );
 }

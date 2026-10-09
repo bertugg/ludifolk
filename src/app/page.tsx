@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/card";
 import { FeedCard, type FeedItem } from "@/components/feed-card";
 import { FeedTabs } from "@/components/feed-tabs";
 import type { ParticipantForDisplay } from "@/lib/session-display";
+import { sessionPhotoUrls, signFeedPhotos } from "@/lib/feed-photos";
 import { signOut } from "./actions";
 
 const ACTIVITY_SELECT = `
@@ -22,7 +23,8 @@ const ACTIVITY_SELECT = `
       profile:profiles!game_participants_profile_id_fkey ( username, display_name, avatar_url )
     ),
     likes ( profile_id ),
-    comments ( id )
+    comments ( id ),
+    photos ( storage_path, created_at )
   )
 `;
 
@@ -42,10 +44,16 @@ type ActivityRow = {
     participants: (ParticipantForDisplay & { profile_id: string | null })[];
     likes: { profile_id: string }[];
     comments: { id: string }[];
+    photos: { storage_path: string; created_at: string }[];
   } | null;
 };
 
-function toFeedItems(rows: ActivityRow[], userId: string, scope: "own" | "following"): FeedItem[] {
+function toFeedItems(
+  rows: ActivityRow[],
+  userId: string,
+  scope: "own" | "following",
+  photoUrls: Map<string, string>,
+): FeedItem[] {
   return rows
     .filter((a) => a.session && a.session.game)
     .filter((a) => {
@@ -80,6 +88,7 @@ function toFeedItems(rows: ActivityRow[], userId: string, scope: "own" | "follow
         likeCount: a.session!.likes.length,
         likedByMe: a.session!.likes.some((l) => l.profile_id === userId),
         commentCount: a.session!.comments.length,
+        photoUrls: sessionPhotoUrls(a.session!.photos, photoUrls),
       },
     }));
 }
@@ -90,14 +99,18 @@ function daysAgoIsoDate(days: number): string {
 
 function FeedList({ items, emptyTitle, emptyCta }: { items: FeedItem[]; emptyTitle: string; emptyCta?: ReactNode }) {
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-3 p-4">
+    <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col">
       {items.length === 0 ? (
-        <Card className="items-center gap-3 p-8 text-center">
+        <Card className="m-4 items-center gap-3 p-8 text-center">
           <p className="text-sm text-muted-foreground">{emptyTitle}</p>
           {emptyCta}
         </Card>
       ) : (
-        items.map((item) => <FeedCard key={item.id} item={item} />)
+        <div className="flex flex-col divide-y divide-border/60">
+          {items.map((item) => (
+            <FeedCard key={item.id} item={item} />
+          ))}
+        </div>
       )}
     </div>
   );
@@ -122,7 +135,7 @@ export default async function Home() {
     supabase.from("follows").select("following_id").eq("follower_id", userId),
   ]);
 
-  const forYouFeed = toFeedItems((activitiesRaw ?? []) as unknown as ActivityRow[], userId, "own");
+  const activities = (activitiesRaw ?? []) as unknown as ActivityRow[];
 
   const followingIds = (followingRows ?? []).map((f) => f.following_id);
   const { data: friendsActivitiesRaw } = followingIds.length
@@ -133,7 +146,7 @@ export default async function Home() {
         .order("created_at", { ascending: false })
         .limit(20)
     : { data: [] };
-  const friendsFeed = toFeedItems((friendsActivitiesRaw ?? []) as unknown as ActivityRow[], userId, "following");
+  const friendsActivities = (friendsActivitiesRaw ?? []) as unknown as ActivityRow[];
 
   const { data: myGroupRows } = await supabase.from("group_members").select("group_id").eq("profile_id", userId);
   const myGroupIds = (myGroupRows ?? []).map((g) => g.group_id);
@@ -152,12 +165,23 @@ export default async function Home() {
               profile:profiles!game_participants_profile_id_fkey ( username, display_name, avatar_url )
             ),
             likes ( profile_id ),
-            comments ( id )
+            comments ( id ),
+            photos ( storage_path, created_at )
           `,
         )
         .in("group_id", myGroupIds)
         .gte("played_at", trendingWindowStart)
     : { data: [] };
+
+  const photoUrls = await signFeedPhotos(supabase, [
+    ...new Set([
+      ...[...activities, ...friendsActivities].flatMap((a) => a.session?.photos.map((p) => p.storage_path) ?? []),
+      ...(groupSessionsRaw ?? []).flatMap((s) => s.photos.map((p) => p.storage_path)),
+    ]),
+  ]);
+
+  const forYouFeed = toFeedItems(activities, userId, "own", photoUrls);
+  const friendsFeed = toFeedItems(friendsActivities, userId, "following", photoUrls);
 
   const groupsFeed: FeedItem[] = (groupSessionsRaw ?? [])
     .filter((s) => s.game !== null)
@@ -183,6 +207,7 @@ export default async function Home() {
         likeCount: s.likes.length,
         likedByMe: s.likes.some((l) => l.profile_id === userId),
         commentCount: s.comments.length,
+        photoUrls: sessionPhotoUrls(s.photos, photoUrls),
       },
     }))
     .sort((a, b) => {
@@ -206,14 +231,14 @@ export default async function Home() {
 
   return (
     <div className="flex flex-1 flex-col">
-      <header className="sticky top-0 z-30 flex items-center justify-between border-b border-border bg-background/95 px-4 py-3 backdrop-blur">
-        <h1 className="font-heading text-2xl font-semibold text-foreground">Ludifolk</h1>
+      <header className="sticky top-0 z-30 flex items-center justify-between border-b border-border/70 bg-background/95 px-4 py-3 backdrop-blur">
+        <h1 className="font-heading text-[26px] font-bold tracking-tight text-foreground">Ludifolk</h1>
         <div className="flex items-center gap-1">
           <ButtonLink href="/games" variant="ghost" size="icon" aria-label="Search games">
-            <SearchIcon className="size-5" />
+            <SearchIcon className="size-[22px]" />
           </ButtonLink>
           <ButtonLink href="/discover" variant="ghost" size="icon" aria-label="Discover people">
-            <UserPlusIcon className="size-5" />
+            <UserPlusIcon className="size-[22px]" />
           </ButtonLink>
           <ButtonLink
             href="/notifications"
@@ -222,7 +247,7 @@ export default async function Home() {
             aria-label="Notifications"
             className="relative"
           >
-            <BellIcon className="size-5" />
+            <BellIcon className="size-[22px]" />
             {!!pendingCount && (
               <Badge className="absolute -top-0.5 -right-0.5 h-4 min-w-4 px-1 text-[10px]">
                 {pendingCount}
@@ -231,7 +256,7 @@ export default async function Home() {
           </ButtonLink>
           <form action={signOut}>
             <Button type="submit" variant="ghost" size="icon" aria-label="Log out">
-              <LogOutIcon className="size-5" />
+              <LogOutIcon className="size-[22px]" />
             </Button>
           </form>
         </div>
