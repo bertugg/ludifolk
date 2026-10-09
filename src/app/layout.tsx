@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Fraunces, Geist, Geist_Mono } from "next/font/google";
 import { BottomNav } from "@/components/bottom-nav";
 import { createClient } from "@/lib/supabase/server";
@@ -24,6 +24,13 @@ const fraunces = Fraunces({
 export const metadata: Metadata = {
   title: "Ludifolk",
   description: "Log what happened at game night.",
+  // iOS "Add to Home Screen" counterpart of the web manifest.
+  appleWebApp: { capable: true, title: "Ludifolk", statusBarStyle: "default" },
+};
+
+export const viewport: Viewport = {
+  // Status bar / browser chrome color — matches the cream app background.
+  themeColor: "#fbf5ee",
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
