@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { LikeButton } from "@/components/like-button";
+import { MentionText } from "@/components/mention-text";
 import { ShareButton } from "@/components/share-button";
 import {
   participantDisplayName,
@@ -163,10 +164,14 @@ export function FeedCard({ item }: { item: FeedItem }) {
           </div>
         </div>
 
-        {session.notes && (
-          <p className="px-4 text-sm italic text-muted-foreground">&ldquo;{session.notes}&rdquo;</p>
-        )}
       </Link>
+
+      {/* Outside the card link: notes can contain @tag links, and links can't nest. */}
+      {session.notes && (
+        <p className="px-4 text-sm italic text-muted-foreground">
+          &ldquo;<MentionText text={session.notes} />&rdquo;
+        </p>
+      )}
 
       <div className="-mt-1 flex items-center gap-1 px-2.5">
         <LikeButton sessionId={session.id} initialLiked={session.likedByMe} initialCount={session.likeCount} />

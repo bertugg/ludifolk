@@ -15,6 +15,7 @@ import { numericStats, percentileRank, performanceLabel } from "@/lib/stats";
 import { hasAnyValue, parseBreakdown, parseScoringSchema, playerCategories, teamCategories } from "@/lib/scoring";
 import { CommentForm } from "./comment-form";
 import { DeleteCommentButton } from "./delete-comment-button";
+import { MentionText } from "@/components/mention-text";
 import { getSessionData } from "./data";
 
 export async function generateMetadata({
@@ -330,7 +331,7 @@ export default async function GameSessionPage({ params }: { params: Promise<{ id
 
       {session.notes && (
         <p className="rounded-lg bg-muted p-3 text-sm italic leading-relaxed">
-          &ldquo;{session.notes}&rdquo;
+          &ldquo;<MentionText text={session.notes} />&rdquo;
         </p>
       )}
 
@@ -372,7 +373,7 @@ export default async function GameSessionPage({ params }: { params: Promise<{ id
                   </Avatar>
                   <div className="flex-1">
                     <p className="text-sm">
-                      <span className="font-medium">{name}</span> {c.body}
+                      <span className="font-medium">{name}</span> <MentionText text={c.body} />
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {new Date(c.created_at).toLocaleDateString(undefined, {
