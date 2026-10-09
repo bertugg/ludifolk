@@ -17,6 +17,7 @@ import { CommentForm } from "./comment-form";
 import { DeleteCommentButton } from "./delete-comment-button";
 import { DeleteSessionButton } from "./delete-session-button";
 import { MentionText } from "@/components/mention-text";
+import { PhotoGallery } from "@/components/photo-gallery";
 import { getSessionData } from "./data";
 
 export async function generateMetadata({
@@ -337,15 +338,7 @@ export default async function GameSessionPage({ params }: { params: Promise<{ id
         </p>
       )}
 
-      {photoUrls.length > 0 && (
-        <div className="grid grid-cols-3 gap-2">
-          {photoUrls.map((url, i) => (
-            <div key={i} className="relative aspect-square overflow-hidden rounded-lg bg-muted">
-              <Image src={url} alt="" fill className="object-cover" sizes="224px" />
-            </div>
-          ))}
-        </div>
-      )}
+      <PhotoGallery urls={photoUrls} variant="grid" />
 
       {auth.user ? (
         <LikeButton

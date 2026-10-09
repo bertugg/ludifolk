@@ -4,6 +4,7 @@ import { CircleCheckIcon, CircleXIcon, CrownIcon, MessageSquareIcon } from "luci
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LikeButton } from "@/components/like-button";
 import { MentionText } from "@/components/mention-text";
+import { PhotoGallery } from "@/components/photo-gallery";
 import { ShareButton } from "@/components/share-button";
 import {
   participantDisplayName,
@@ -53,9 +54,6 @@ export function FeedCard({ item }: { item: FeedItem }) {
   const otherPlayers = winner ? players.filter((p) => p !== winner) : players;
   const sessionPath = `/game-session/${session.id}`;
   const won = session.cooperativeOutcome === "win";
-  // Four slots: show every photo when they fit, else three plus a "+N" tile.
-  const shownPhotos = session.photoUrls.length > 4 ? session.photoUrls.slice(0, 3) : session.photoUrls;
-  const hiddenPhotoCount = session.photoUrls.length - shownPhotos.length;
 
   return (
     <article className="flex flex-col gap-3 py-4">
@@ -179,19 +177,10 @@ export function FeedCard({ item }: { item: FeedItem }) {
         </p>
       )}
 
-      {shownPhotos.length > 0 && (
-        <Link href={sessionPath} className="grid grid-cols-4 gap-2 px-4" aria-label="View photos">
-          {shownPhotos.map((url, i) => (
-            <div key={i} className="relative aspect-4/3 overflow-hidden rounded-lg bg-muted">
-              <Image src={url} alt="" fill className="object-cover" sizes="96px" />
-            </div>
-          ))}
-          {hiddenPhotoCount > 0 && (
-            <div className="flex aspect-4/3 items-center justify-center rounded-lg bg-muted text-sm font-medium text-foreground/70">
-              +{hiddenPhotoCount}
-            </div>
-          )}
-        </Link>
+      {session.photoUrls.length > 0 && (
+        <div className="px-4">
+          <PhotoGallery urls={session.photoUrls} variant="strip" />
+        </div>
       )}
 
       <div className="-mt-1 flex items-center gap-1 px-2.5 text-foreground">
