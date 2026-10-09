@@ -7,10 +7,11 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-serif: var(--font-fraunces);
-  --font-heading: var(--font-serif);
+  /* Typography tokens. Manrope everywhere; Newsreader only via font-editorial
+     / type-story / type-quote. Headings deliberately share the app font. */
+  --font-sans: var(--font-manrope);
+  --font-heading: var(--font-sans);
+  --font-editorial: var(--font-newsreader);
   --color-terracotta: var(--terracotta);
   --color-forest: var(--forest);
   --color-sage: var(--sage);
@@ -146,5 +147,81 @@
   }
   html {
     @apply font-sans;
+    /* All weights/styles we use are real faces — never fake them (Manrope has
+       no italic, so `italic` on UI text stays upright instead of faux-slanted). */
+    font-synthesis: none;
   }
+}
+
+/*
+ * Semantic typography roles. Prefixed type-* (not text-*) so the cn() class
+ * merger never mistakes them for text colors and drops them.
+ *
+ *   Manrope — 400 body · 500 metadata/names · 600 buttons, tabs, card titles ·
+ *             700 page titles, scores · 800 the wordmark only.
+ *   Newsreader — personal/story text and quotes only; never UI, data or nav.
+ */
+@utility type-display {
+  font-family: var(--font-heading);
+  font-size: 2rem;
+  line-height: 1.15;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+@utility type-page-title {
+  font-family: var(--font-heading);
+  font-size: 1.5rem;
+  line-height: 1.25;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+@utility type-section-title {
+  font-family: var(--font-heading);
+  font-size: 1.25rem;
+  line-height: 1.3;
+  font-weight: 600;
+}
+
+@utility type-card-title {
+  font-family: var(--font-heading);
+  font-size: 1rem;
+  line-height: 1.3;
+  font-weight: 600;
+}
+
+@utility type-body {
+  font-size: 0.875rem;
+  line-height: 1.6;
+  font-weight: 400;
+}
+
+@utility type-meta {
+  font-size: 0.75rem;
+  line-height: 1.4;
+  font-weight: 500;
+}
+
+/* Size comes from context (text-3xl, text-4xl…); this sets the numeric voice. */
+@utility type-score {
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+@utility type-story {
+  font-family: var(--font-editorial);
+  font-size: 1.0625rem;
+  line-height: 1.65;
+  font-weight: 400;
+}
+
+@utility type-quote {
+  font-family: var(--font-editorial);
+  font-style: italic;
+  font-size: 1rem;
+  line-height: 1.5;
+  font-weight: 400;
 }

@@ -24,7 +24,7 @@ export default async function EditGameSessionPage({ params }: { params: Promise<
     <div className="mx-auto flex w-full max-w-sm flex-1 flex-col gap-4 p-4">
       <div className="flex items-center gap-2">
         <BackButton fallbackHref={`/game-session/${id}`} />
-        <h1 className="font-heading text-xl font-semibold">Edit result</h1>
+        <h1 className="type-page-title">Edit result</h1>
       </div>
       <EditSessionForm session={session} game={session.game} />
     </div>

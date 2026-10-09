@@ -159,7 +159,7 @@ function DiscoverLayout({ query, children }: { query: string; children: React.Re
     <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-4 p-4">
       <div className="flex items-center gap-2">
         <BackButton fallbackHref="/" />
-        <h1 className="font-heading text-xl font-semibold">Discover people</h1>
+        <h1 className="type-page-title">Discover people</h1>
       </div>
 
       <form action="/discover" className="flex gap-2">

@@ -49,7 +49,7 @@ export function ScoreEntryFields({
       {hasContributingCategories && (
         <div className="flex items-center justify-between gap-3 border-t border-border pt-2">
           <span className="text-sm font-medium">Total</span>
-          <span className="w-20 text-right font-heading text-base font-semibold">
+          <span className="w-20 text-right text-base font-semibold tabular-nums">
             {total !== null ? total : "—"}
           </span>
         </div>

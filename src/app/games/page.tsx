@@ -19,7 +19,7 @@ export default async function GamesPage() {
     <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-4 p-4">
       <div className="flex items-center gap-2">
         <AppHomeLink />
-        <h1 className="font-heading text-xl font-semibold">Games</h1>
+        <h1 className="type-page-title">Games</h1>
       </div>
 
       {friendsPlay.length > 0 && (

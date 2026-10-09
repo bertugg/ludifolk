@@ -97,7 +97,7 @@ export default async function GamePage({ params }: { params: Promise<{ slug: str
       </div>
 
       <div>
-        <h1 className="font-heading text-xl font-semibold">{game.title}</h1>
+        <h1 className="type-page-title">{game.title}</h1>
         <p className="text-sm text-muted-foreground">
           {[game.publisher, game.year_published].filter(Boolean).join(" · ")}
         </p>

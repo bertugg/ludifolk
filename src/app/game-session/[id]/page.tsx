@@ -184,7 +184,7 @@ export default async function GameSessionPage({ params }: { params: Promise<{ id
         <Link href={`/games/${game.slug}`} className="text-sm text-muted-foreground hover:underline">
           {game.title}
         </Link>
-        <h1 className="font-heading text-xl font-semibold">
+        <h1 className="type-page-title">
           {sessionHeadline(game.scoring_type, session.cooperative_outcome, winnerName)}
         </h1>
         <p className="text-sm text-muted-foreground">
@@ -333,7 +333,7 @@ export default async function GameSessionPage({ params }: { params: Promise<{ id
       )}
 
       {session.notes && (
-        <p className="rounded-lg bg-muted p-3 text-sm italic leading-relaxed">
+        <p className="type-quote rounded-lg bg-muted p-3">
           &ldquo;<MentionText text={session.notes} />&rdquo;
         </p>
       )}
