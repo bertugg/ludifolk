@@ -15,6 +15,7 @@ import { numericStats, percentileRank, performanceLabel } from "@/lib/stats";
 import { hasAnyValue, parseBreakdown, parseScoringSchema, playerCategories, teamCategories } from "@/lib/scoring";
 import { CommentForm } from "./comment-form";
 import { DeleteCommentButton } from "./delete-comment-button";
+import { DeleteSessionButton } from "./delete-session-button";
 import { MentionText } from "@/components/mention-text";
 import { getSessionData } from "./data";
 
@@ -160,6 +161,7 @@ export default async function GameSessionPage({ params }: { params: Promise<{ id
               <PencilIcon className="size-4" />
             </ButtonLink>
           )}
+          {isCreator && <DeleteSessionButton sessionId={session.id} />}
           <ShareButton title={`${game.title} — Ludifolk`} referralSource={`game_session:${session.id}`} />
         </div>
       </div>
