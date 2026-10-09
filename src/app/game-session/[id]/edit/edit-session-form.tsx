@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { MentionTextarea } from "@/components/mention-textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScoreEntryFields } from "@/components/score-entry-fields";
 import { participantDisplayName } from "@/lib/session-display";
@@ -217,7 +217,13 @@ export function EditSessionForm({ session, game }: { session: SessionData; game:
       </div>
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="notes">Notes</Label>
-        <Textarea id="notes" name="notes" rows={2} placeholder="Optional" defaultValue={session.notes ?? ""} />
+        <MentionTextarea
+          id="notes"
+          name="notes"
+          rows={2}
+          placeholder="Optional — tag players with @username"
+          defaultValue={session.notes ?? ""}
+        />
       </div>
 
       {state?.error && <p className="text-sm text-destructive">{state.error}</p>}

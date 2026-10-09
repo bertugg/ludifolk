@@ -4,7 +4,7 @@ import { useActionState, useEffect, useRef } from "react";
 import { useFormStatus } from "react-dom";
 import { addComment, type CommentFormState } from "./actions";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import { MentionTextarea } from "@/components/mention-textarea";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -28,7 +28,7 @@ export function CommentForm({ sessionId }: { sessionId: string }) {
   return (
     <form ref={formRef} action={formAction} className="flex flex-col gap-2">
       <input type="hidden" name="session_id" value={sessionId} />
-      <Textarea name="body" placeholder="Add a comment…" rows={2} required maxLength={2000} />
+      <MentionTextarea name="body" placeholder="Add a comment… (@username to tag)" rows={2} required maxLength={2000} />
       {state && "error" in state && <p className="text-sm text-destructive">{state.error}</p>}
       <SubmitButton />
     </form>

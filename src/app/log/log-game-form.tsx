@@ -9,11 +9,11 @@ import { ButtonLink } from "@/components/button-link";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { GameCombobox } from "@/components/game-combobox";
+import { MentionTextarea } from "@/components/mention-textarea";
 import { ScoreEntryFields } from "@/components/score-entry-fields";
 import { computeCategoryTotal, parseScoringSchema, playerCategories, teamCategories } from "@/lib/scoring";
 import { formatMegabytes, MAX_SESSION_PHOTOS, MAX_SESSION_PHOTO_BYTES } from "@/lib/photo-limits";
@@ -581,7 +581,7 @@ function LogGameFormInner({
 
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="notes">Notes</Label>
-        <Textarea id="notes" name="notes" rows={2} placeholder="Optional" />
+        <MentionTextarea id="notes" name="notes" rows={2} placeholder="Optional — tag players with @username" />
       </div>
 
       <PhotoPicker />
