@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { BackButton } from "@/components/back-button";
 import { ButtonLink } from "@/components/button-link";
 import { FeedCard, type FeedItem } from "@/components/feed-card";
+import { sessionPhotoUrls, signFeedPhotos } from "@/lib/feed-photos";
 import { InviteMemberForm } from "./invite-member-form";
 import { RemoveMemberButton } from "./remove-member-button";
 import { GroupTabs } from "./group-tabs";
@@ -97,12 +98,18 @@ export default async function GroupPage({ params }: { params: Promise<{ slug: st
           profile:profiles!game_participants_profile_id_fkey ( username, display_name, avatar_url )
         ),
         likes ( profile_id ),
-        comments ( id )
+        comments ( id ),
+        photos ( storage_path, created_at )
       `,
     )
     .eq("group_id", group.id)
     .order("played_at", { ascending: false })
     .limit(20);
+
+  const photoUrls = await signFeedPhotos(
+    supabase,
+    (sessionsRaw ?? []).flatMap((s) => s.photos.map((p) => p.storage_path)),
+  );
 
   const feedItems: FeedItem[] = (sessionsRaw ?? [])
     .filter((s) => s.game !== null)
@@ -128,6 +135,7 @@ export default async function GroupPage({ params }: { params: Promise<{ slug: st
         likeCount: s.likes.length,
         likedByMe: s.likes.some((l) => l.profile_id === userId),
         commentCount: s.comments.length,
+        photoUrls: sessionPhotoUrls(s.photos, photoUrls),
       },
     }));
 
@@ -150,7 +158,7 @@ export default async function GroupPage({ params }: { params: Promise<{ slug: st
 
       <GroupTabs
         feed={
-          <div className="flex flex-col gap-3 pt-3">
+          <div className={feedItems.length === 0 ? "pt-3" : "-mx-4 flex flex-col divide-y divide-border/60"}>
             {feedItems.length === 0 ? (
               <Card className="items-center gap-3 p-8 text-center">
                 <p className="text-sm text-muted-foreground">No games logged for this group yet.</p>
