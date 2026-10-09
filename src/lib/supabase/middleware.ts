@@ -33,6 +33,8 @@ export async function updateSession(request: NextRequest) {
   const isPublicRoute =
     pathname === "/login" ||
     pathname === "/signup" ||
+    // Browsers fetch the web manifest without cookies.
+    pathname === "/manifest.webmanifest" ||
     pathname.startsWith("/auth") ||
     pathname.startsWith("/profile/") ||
     pathname === "/games" ||
