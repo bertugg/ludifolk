@@ -245,7 +245,7 @@ export default async function Home() {
         <div className="mx-auto flex w-full max-w-2xl items-center justify-between px-4 py-3">
           <div className="flex items-center gap-2">
             <AppHomeLink />
-            <h1 className="font-heading text-[26px] font-bold tracking-tight text-foreground">Ludifolk</h1>
+            <h1 className="text-[26px] font-extrabold leading-tight tracking-tight text-foreground">Ludifolk</h1>
           </div>
           <div className="flex items-center gap-1">
             <ButtonLink href="/games" variant="ghost" size="icon" aria-label="Search games">

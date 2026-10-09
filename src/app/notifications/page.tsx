@@ -84,7 +84,7 @@ export default async function NotificationsPage() {
     <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-4 p-4">
       <div className="flex items-center gap-2">
         <BackButton fallbackHref="/" />
-        <h1 className="font-heading text-xl font-semibold">Notifications</h1>
+        <h1 className="type-page-title">Notifications</h1>
       </div>
 
       {!notifications?.length && (

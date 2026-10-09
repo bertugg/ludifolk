@@ -21,7 +21,7 @@ export async function MentionText({ text }: { text: string }) {
       <Link
         key={i}
         href={`/profile/${segment.username}`}
-        className="font-medium not-italic text-primary hover:underline"
+        className="font-sans font-medium not-italic text-primary hover:underline"
       >
         {segment.text}
       </Link>

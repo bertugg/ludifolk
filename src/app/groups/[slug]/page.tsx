@@ -149,7 +149,7 @@ export default async function GroupPage({ params }: { params: Promise<{ slug: st
           <AvatarFallback className="text-xl">{group.name.slice(0, 1).toUpperCase()}</AvatarFallback>
         </Avatar>
         <div>
-          <h1 className="font-heading text-xl font-semibold">{group.name}</h1>
+          <h1 className="type-page-title">{group.name}</h1>
           <p className="text-sm text-muted-foreground">{members.length} members</p>
         </div>
       </div>

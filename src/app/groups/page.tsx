@@ -32,7 +32,7 @@ export default async function GroupsPage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <AppHomeLink />
-          <h1 className="font-heading text-xl font-semibold">Groups</h1>
+          <h1 className="type-page-title">Groups</h1>
         </div>
         <ButtonLink href="/groups/new" size="sm">
           Create group

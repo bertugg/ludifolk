@@ -56,7 +56,7 @@ function SuccessView({
     <Card>
       <CardContent className="flex flex-col gap-3">
         <p className="text-sm text-muted-foreground">Logged</p>
-        <h2 className="font-heading text-lg font-semibold">{success.gameTitle}</h2>
+        <h2 className="type-section-title">{success.gameTitle}</h2>
         <ul className="flex flex-col gap-1.5">
           {success.players.map((p, i) => (
             <li key={i} className="flex items-center justify-between text-sm">

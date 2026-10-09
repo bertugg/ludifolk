@@ -57,7 +57,7 @@ export default async function WrappedPage({ params }: { params: Promise<{ userna
       <div className="flex flex-col gap-6 rounded-2xl bg-gradient-to-br from-terracotta via-terracotta to-forest p-6 text-cream shadow-lg">
         <div>
           <p className="text-xs font-semibold tracking-widest uppercase opacity-80">{name}&apos;s</p>
-          <h1 className="font-heading text-3xl font-bold leading-tight">{year} Board Game Year</h1>
+          <h1 className="type-display">{year} Board Game Year</h1>
         </div>
 
         {gamesPlayed === 0 ? (
@@ -66,15 +66,15 @@ export default async function WrappedPage({ params }: { params: Promise<{ userna
           <>
             <div className="flex gap-6">
               <div>
-                <p className="font-heading text-3xl font-bold">{gamesPlayed}</p>
+                <p className="type-score text-3xl">{gamesPlayed}</p>
                 <p className="text-xs opacity-80">games</p>
               </div>
               <div>
-                <p className="font-heading text-3xl font-bold">{wins}</p>
+                <p className="type-score text-3xl">{wins}</p>
                 <p className="text-xs opacity-80">wins</p>
               </div>
               <div>
-                <p className="font-heading text-3xl font-bold">{distinctOpponents}</p>
+                <p className="type-score text-3xl">{distinctOpponents}</p>
                 <p className="text-xs opacity-80">opponents</p>
               </div>
             </div>
@@ -83,7 +83,7 @@ export default async function WrappedPage({ params }: { params: Promise<{ userna
               {highlights.map((h) => (
                 <div key={h.label} className="rounded-xl bg-cream/10 p-3">
                   <p className="text-xs font-semibold tracking-wide uppercase opacity-80">{h.label}</p>
-                  <p className="font-heading text-lg font-semibold">{h.value}</p>
+                  <p className="text-lg font-semibold leading-snug">{h.value}</p>
                 </div>
               ))}
             </div>

@@ -64,7 +64,7 @@ export function FeedCard({ item }: { item: FeedItem }) {
             <AvatarFallback>{item.actorName.slice(0, 1).toUpperCase()}</AvatarFallback>
           </Avatar>
           <div className="min-w-0">
-            <p className="font-heading text-[15px] leading-snug text-foreground">
+            <p className="text-[15px] leading-snug text-foreground">
               <span className="font-semibold">
                 {item.actorName}
                 {players.length > 1 && `+${players.length - 1}`}
@@ -106,7 +106,7 @@ export function FeedCard({ item }: { item: FeedItem }) {
                   Mission {won ? "Success" : "Failed"}
                 </span>
                 {session.cooperativeScore !== null && (
-                  <p className="text-4xl font-bold leading-none tracking-tight text-foreground">
+                  <p className="type-score text-4xl text-foreground">
                     {session.cooperativeScore}
                   </p>
                 )}
@@ -134,10 +134,10 @@ export function FeedCard({ item }: { item: FeedItem }) {
                     </p>
                     {winner.score !== null && (
                       <p className="flex items-baseline gap-1.5 px-3">
-                        <span className="text-4xl font-bold leading-none tracking-tight text-foreground">
+                        <span className="type-score text-4xl text-foreground">
                           {winner.score}
                         </span>
-                        <span className="text-xs text-muted-foreground">points</span>
+                        <span className="text-xs font-bold text-muted-foreground">points</span>
                       </p>
                     )}
                   </div>
@@ -156,7 +156,7 @@ export function FeedCard({ item }: { item: FeedItem }) {
                           {participantDisplayName(p)}
                         </span>
                         {(p.score !== null || p.position !== null) && (
-                          <span className="font-semibold tabular-nums text-foreground">
+                          <span className="font-bold tabular-nums text-foreground">
                             {p.score !== null ? p.score : `#${p.position}`}
                           </span>
                         )}
@@ -172,7 +172,7 @@ export function FeedCard({ item }: { item: FeedItem }) {
 
       {/* Outside the card link: notes can contain @tag links, and links can't nest. */}
       {session.notes && (
-        <p className="px-4 font-heading text-[15px] italic text-foreground/90">
+        <p className="type-quote px-4 text-foreground/90">
           &ldquo;<MentionText text={session.notes} />&rdquo;
         </p>
       )}

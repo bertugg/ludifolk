@@ -288,7 +288,7 @@ export default async function ProfilePage({
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <h1 className="font-heading text-xl font-semibold">{profile.display_name || profile.username}</h1>
+                  <h1 className="type-page-title">{profile.display_name || profile.username}</h1>
                   <p className="text-sm text-muted-foreground">@{profile.username}</p>
                 </div>
                 {profile.bio && <p className="text-sm">{profile.bio}</p>}
