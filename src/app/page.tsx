@@ -4,6 +4,7 @@ import { BellIcon, LogOutIcon, SearchIcon, UserPlusIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { AppHomeLink } from "@/components/app-home-link";
 import { ButtonLink } from "@/components/button-link";
 import { Card } from "@/components/ui/card";
 import { FeedCard, type FeedItem } from "@/components/feed-card";
@@ -239,34 +240,40 @@ export default async function Home() {
 
   return (
     <div className="flex flex-1 flex-col">
-      <header className="sticky top-0 z-30 flex items-center justify-between border-b border-border/70 bg-background/95 px-4 py-3 backdrop-blur">
-        <h1 className="font-heading text-[26px] font-bold tracking-tight text-foreground">Ludifolk</h1>
-        <div className="flex items-center gap-1">
-          <ButtonLink href="/games" variant="ghost" size="icon" aria-label="Search games">
-            <SearchIcon className="size-[22px]" />
-          </ButtonLink>
-          <ButtonLink href="/discover" variant="ghost" size="icon" aria-label="Discover people">
-            <UserPlusIcon className="size-[22px]" />
-          </ButtonLink>
-          <ButtonLink
-            href="/notifications"
-            variant="ghost"
-            size="icon"
-            aria-label="Notifications"
-            className="relative"
-          >
-            <BellIcon className="size-[22px]" />
-            {!!pendingCount && (
-              <Badge className="absolute -top-0.5 -right-0.5 h-4 min-w-4 px-1 text-[10px]">
-                {pendingCount}
-              </Badge>
-            )}
-          </ButtonLink>
-          <form action={signOut}>
-            <Button type="submit" variant="ghost" size="icon" aria-label="Log out">
-              <LogOutIcon className="size-[22px]" />
-            </Button>
-          </form>
+      <header className="sticky top-0 z-30 border-b border-border/70 bg-background/95 backdrop-blur">
+        {/* Full-width bar, content in the same centered column as the other pages. */}
+        <div className="mx-auto flex w-full max-w-2xl items-center justify-between px-4 py-3">
+          <div className="flex items-center gap-2">
+            <AppHomeLink />
+            <h1 className="font-heading text-[26px] font-bold tracking-tight text-foreground">Ludifolk</h1>
+          </div>
+          <div className="flex items-center gap-1">
+            <ButtonLink href="/games" variant="ghost" size="icon" aria-label="Search games">
+              <SearchIcon className="size-[22px]" />
+            </ButtonLink>
+            <ButtonLink href="/discover" variant="ghost" size="icon" aria-label="Discover people">
+              <UserPlusIcon className="size-[22px]" />
+            </ButtonLink>
+            <ButtonLink
+              href="/notifications"
+              variant="ghost"
+              size="icon"
+              aria-label="Notifications"
+              className="relative"
+            >
+              <BellIcon className="size-[22px]" />
+              {!!pendingCount && (
+                <Badge className="absolute -top-0.5 -right-0.5 h-4 min-w-4 px-1 text-[10px]">
+                  {pendingCount}
+                </Badge>
+              )}
+            </ButtonLink>
+            <form action={signOut}>
+              <Button type="submit" variant="ghost" size="icon" aria-label="Log out">
+                <LogOutIcon className="size-[22px]" />
+              </Button>
+            </form>
+          </div>
         </div>
       </header>
 

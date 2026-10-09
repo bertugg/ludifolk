@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { BackButton } from "@/components/back-button";
+import { AppHomeLink } from "@/components/app-home-link";
 import { ButtonLink } from "@/components/button-link";
 import { FeedCard, type FeedItem } from "@/components/feed-card";
 import { sessionPhotoUrls, signFeedPhotos } from "@/lib/feed-photos";
@@ -141,7 +141,7 @@ export default async function GroupPage({ params }: { params: Promise<{ slug: st
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-4 p-4">
-      <BackButton fallbackHref="/groups" />
+      <AppHomeLink />
 
       <div className="flex items-center gap-3">
         <Avatar size="lg" className="size-16">

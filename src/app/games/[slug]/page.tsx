@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Badge } from "@/components/ui/badge";
-import { BackButton } from "@/components/back-button";
+import { AppHomeLink } from "@/components/app-home-link";
 import { playerCountLabel, playtimeLabel, scoringTypeLabel } from "@/lib/games";
 import { basicStats, numericStats, positionStats } from "@/lib/stats";
 
@@ -82,7 +82,7 @@ export default async function GamePage({ params }: { params: Promise<{ slug: str
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-4 p-4">
-      <BackButton fallbackHref="/games" />
+      <AppHomeLink />
       <div className="relative aspect-[2/1] w-full overflow-hidden rounded-xl bg-muted">
         {game.image_url && (
           <Image
