@@ -6,16 +6,16 @@
 //
 // Usage: node --env-file=.env.local scripts/seed-games.mjs
 //
-// image_url is intentionally left null for every row: BGG's cover-image
-// URLs are opaque hashed CDN paths that can't be reliably recalled from
-// memory, and a fabricated-but-plausible URL would just be a broken image
-// (or worse, silently load someone else's picture). Backfill images by
-// re-running scripts/import-games.mjs once BGG access works, or by hand.
+// image_url comes from scripts/game-images.mjs (real, verified BGG CDN
+// URLs); games not listed there get null. Never add a URL from memory —
+// BGG's cover-image paths are opaque hashes, and a plausible-looking guess
+// is a broken image (or worse, silently someone else's picture).
 //
 // Upserts on slug, so re-running is safe and idempotent — it will also
 // enrich any existing row (by slug) with fresher data.
 
 import { createClient } from "@supabase/supabase-js";
+import { GAME_IMAGES } from "./game-images.mjs";
 import { SCORING_SCHEMAS } from "./scoring-schemas.mjs";
 
 function slugify(input) {
@@ -160,7 +160,7 @@ async function main() {
         slug,
         title,
         description,
-        image_url: null,
+        image_url: GAME_IMAGES[slug] ?? null,
         publisher,
         year_published: year,
         min_players: minP,
@@ -177,10 +177,15 @@ async function main() {
     },
   );
 
-  const unknownSchemaSlugs = Object.keys(SCORING_SCHEMAS).filter((slug) => !seenSlugs.has(slug));
-  if (unknownSchemaSlugs.length > 0) {
-    console.error(`scoring-schemas.mjs has entries for unknown slugs: ${unknownSchemaSlugs.join(", ")}`);
-    process.exit(1);
+  for (const [file, entries] of [
+    ["scoring-schemas.mjs", SCORING_SCHEMAS],
+    ["game-images.mjs", GAME_IMAGES],
+  ]) {
+    const unknownSlugs = Object.keys(entries).filter((slug) => !seenSlugs.has(slug));
+    if (unknownSlugs.length > 0) {
+      console.error(`${file} has entries for unknown slugs: ${unknownSlugs.join(", ")}`);
+      process.exit(1);
+    }
   }
 
   console.log(`Upserting ${rows.length} games...`);
@@ -191,8 +196,10 @@ async function main() {
     process.exit(1);
   }
 
-  console.log(`Done. Upserted ${data.length} games (${Object.keys(SCORING_SCHEMAS).length} with scoring schemas).`);
-  console.log("image_url is null for all rows — see the comment at the top of this file.");
+  console.log(
+    `Done. Upserted ${data.length} games (${Object.keys(GAME_IMAGES).length} with images, ` +
+      `${Object.keys(SCORING_SCHEMAS).length} with scoring schemas).`,
+  );
 }
 
 main().catch((err) => {
