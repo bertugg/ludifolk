@@ -4,6 +4,7 @@ import { useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 const TABS = [
+  { key: "all", label: "All" },
   { key: "for-you", label: "For You" },
   { key: "friends", label: "Friends" },
   { key: "groups", label: "Groups" },
@@ -12,16 +13,18 @@ const TABS = [
 type TabKey = (typeof TABS)[number]["key"];
 
 export function FeedTabs({
+  all,
   forYou,
   friends,
   groups,
 }: {
+  all: ReactNode;
   forYou: ReactNode;
   friends: ReactNode;
   groups: ReactNode;
 }) {
-  const [tab, setTab] = useState<TabKey>("for-you");
-  const panels = { "for-you": forYou, friends, groups };
+  const [tab, setTab] = useState<TabKey>("all");
+  const panels = { all, "for-you": forYou, friends, groups };
 
   return (
     <>

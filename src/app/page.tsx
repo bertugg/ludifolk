@@ -193,6 +193,17 @@ export default async function Home() {
     })
     .slice(0, 20);
 
+  // The same session can surface in several feeds (e.g. a friend's game in
+  // one of your groups) — keep the first occurrence, newest first.
+  const seenSessionIds = new Set<string>();
+  const allFeed = [...forYouFeed, ...friendsFeed, ...groupsFeed]
+    .filter((item) => {
+      if (seenSessionIds.has(item.session.id)) return false;
+      seenSessionIds.add(item.session.id);
+      return true;
+    })
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
   return (
     <div className="flex flex-1 flex-col">
       <header className="sticky top-0 z-30 flex items-center justify-between border-b border-border bg-background/95 px-4 py-3 backdrop-blur">
@@ -227,6 +238,13 @@ export default async function Home() {
       </header>
 
       <FeedTabs
+        all={
+          <FeedList
+            items={allFeed}
+            emptyTitle="Your table is empty."
+            emptyCta={<ButtonLink href="/log" size="sm">Log a game</ButtonLink>}
+          />
+        }
         forYou={<FeedList items={forYouFeed} emptyTitle="Your table is empty." emptyCta={<ButtonLink href="/log" size="sm">Log a game</ButtonLink>} />}
         friends={
           <FeedList
