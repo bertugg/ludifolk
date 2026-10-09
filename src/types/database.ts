@@ -529,6 +529,7 @@ export type Database = {
       notifications: {
         Row: {
           actor_id: string | null;
+          comment_id: string | null;
           created_at: string;
           game_session_id: string | null;
           group_id: string | null;
@@ -540,6 +541,7 @@ export type Database = {
         };
         Insert: {
           actor_id?: string | null;
+          comment_id?: string | null;
           created_at?: string;
           game_session_id?: string | null;
           group_id?: string | null;
@@ -551,6 +553,7 @@ export type Database = {
         };
         Update: {
           actor_id?: string | null;
+          comment_id?: string | null;
           created_at?: string;
           game_session_id?: string | null;
           group_id?: string | null;

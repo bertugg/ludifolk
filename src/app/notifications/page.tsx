@@ -20,7 +20,7 @@ export default async function NotificationsPage() {
     .from("notifications")
     .select(
       `
-        id, type, created_at, game_session_id, group_id, actor_id,
+        id, type, created_at, game_session_id, group_id, actor_id, comment_id,
         actor:profiles!notifications_actor_id_fkey ( username, display_name, avatar_url ),
         session:game_sessions ( id, played_at, game:games ( title ) ),
         group:groups ( slug, name )
@@ -167,6 +167,33 @@ export default async function NotificationsPage() {
                         followLabel="Follow back"
                       />
                     )}
+                  </CardContent>
+                </Card>
+              </li>
+            );
+          }
+
+          if (n.type === "mention" && n.session && n.game_session_id) {
+            const gameTitle = n.session.game?.title ?? "a game";
+
+            return (
+              <li key={n.id}>
+                <Card>
+                  <CardContent>
+                    <Link
+                      href={`/game-session/${n.game_session_id}`}
+                      className="flex items-center gap-2.5 text-sm hover:underline"
+                    >
+                      <Avatar size="sm">
+                        <AvatarImage src={n.actor?.avatar_url ?? undefined} alt={actorName} />
+                        <AvatarFallback>{actorName.slice(0, 1).toUpperCase()}</AvatarFallback>
+                      </Avatar>
+                      <span>
+                        <span className="font-medium">{actorName}</span>{" "}
+                        {n.comment_id ? "mentioned you in a comment on" : "tagged you in"}{" "}
+                        <span className="font-medium">{gameTitle}</span>
+                      </span>
+                    </Link>
                   </CardContent>
                 </Card>
               </li>
