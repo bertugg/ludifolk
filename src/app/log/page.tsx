@@ -13,7 +13,7 @@ export default async function LogPage() {
     redirect("/login");
   }
 
-  const [games, { data: profile }, { data: groupRows }] = await Promise.all([
+  const [games, { data: profile }, { data: groupRows }, { data: followRows }] = await Promise.all([
     searchGames(""),
     supabase.from("profiles").select("username, display_name").eq("id", auth.user.id).single(),
     supabase
@@ -29,7 +29,17 @@ export default async function LogPage() {
         `,
       )
       .eq("profile_id", auth.user.id),
+    supabase
+      .from("follows")
+      .select("profile:profiles!follows_following_id_fkey ( username, display_name, avatar_url )")
+      .eq("follower_id", auth.user.id),
   ]);
+
+  // Player-name suggestions come only from people the logger follows.
+  const following = (followRows ?? [])
+    .map((f) => f.profile)
+    .filter((p) => p !== null)
+    .sort((a, b) => (a.display_name || a.username).localeCompare(b.display_name || b.username));
 
   const groups = (groupRows ?? [])
     .map((r) => r.group)
@@ -58,6 +68,7 @@ export default async function LogPage() {
                 ownUsername={profile?.username ?? ""}
                 ownDisplayName={profile?.display_name ?? null}
                 groups={groups}
+                following={following}
               />
             ) : (
               <div className="flex flex-col items-center gap-3 py-6 text-center">
