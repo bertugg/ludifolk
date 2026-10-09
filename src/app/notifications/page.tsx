@@ -5,6 +5,7 @@ import { BackButton } from "@/components/back-button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { FollowButton } from "@/components/follow-button";
 import { confirmParticipation, declineParticipation } from "./actions";
 import { acceptInvitation, declineInvitation } from "@/app/groups/[slug]/actions";
 
@@ -19,7 +20,7 @@ export default async function NotificationsPage() {
     .from("notifications")
     .select(
       `
-        id, type, created_at, game_session_id, group_id,
+        id, type, created_at, game_session_id, group_id, actor_id,
         actor:profiles!notifications_actor_id_fkey ( username, display_name, avatar_url ),
         session:game_sessions ( id, played_at, game:games ( title ) ),
         group:groups ( slug, name )
@@ -57,6 +58,21 @@ export default async function NotificationsPage() {
     : { data: [] as { group_id: string; status: string }[] };
 
   const invitationStatusByGroup = new Map((myInvitations ?? []).map((i) => [i.group_id, i.status]));
+
+  const followerIds = (notifications ?? [])
+    .filter((n) => n.type === "new_follower")
+    .map((n) => n.actor_id)
+    .filter((id): id is string => id !== null);
+
+  const { data: myFollows } = followerIds.length
+    ? await supabase
+        .from("follows")
+        .select("following_id")
+        .eq("follower_id", auth.user.id)
+        .in("following_id", followerIds)
+    : { data: [] as { following_id: string }[] };
+
+  const followingBack = new Set((myFollows ?? []).map((f) => f.following_id));
 
   await supabase
     .from("notifications")
@@ -131,7 +147,7 @@ export default async function NotificationsPage() {
             return (
               <li key={n.id}>
                 <Card>
-                  <CardContent>
+                  <CardContent className="flex items-center justify-between gap-2.5">
                     <Link
                       href={`/profile/${n.actor.username}`}
                       className="flex items-center gap-2.5 text-sm hover:underline"
@@ -144,6 +160,13 @@ export default async function NotificationsPage() {
                         <span className="font-medium">{actorName}</span> started following you
                       </span>
                     </Link>
+                    {n.actor_id && (
+                      <FollowButton
+                        profileId={n.actor_id}
+                        initialFollowing={followingBack.has(n.actor_id)}
+                        followLabel="Follow back"
+                      />
+                    )}
                   </CardContent>
                 </Card>
               </li>
