@@ -7,9 +7,11 @@ import { toggleFollow } from "@/lib/actions/follows";
 export function FollowButton({
   profileId,
   initialFollowing,
+  followLabel = "Follow",
 }: {
   profileId: string;
   initialFollowing: boolean;
+  followLabel?: string;
 }) {
   const [following, setFollowing] = useState(initialFollowing);
   const [isPending, startTransition] = useTransition();
@@ -35,7 +37,7 @@ export function FollowButton({
       onClick={handleClick}
       disabled={isPending}
     >
-      {following ? "Following" : "Follow"}
+      {following ? "Following" : followLabel}
     </Button>
   );
 }
