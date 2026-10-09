@@ -270,6 +270,25 @@ function PhotoPicker() {
   );
 }
 
+/**
+ * Prefilled with the device's local date. Set after mount rather than at
+ * render: the server renders in UTC, which is a different day around
+ * midnight for many users (and would cause a hydration mismatch).
+ */
+function PlayedAtInput() {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const input = inputRef.current;
+    if (!input || input.value) return;
+    const now = new Date();
+    const pad = (n: number) => String(n).padStart(2, "0");
+    input.value = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+  }, []);
+
+  return <Input ref={inputRef} id="played_at" name="played_at" type="date" />;
+}
+
 function emptyRow(id: string, name = ""): Row {
   return { id, name, score: "", position: "", winner: false, breakdown: {}, showDetails: false };
 }
@@ -552,7 +571,7 @@ function LogGameFormInner({
       <div className="grid grid-cols-2 gap-3">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="played_at">Date</Label>
-          <Input id="played_at" name="played_at" type="date" />
+          <PlayedAtInput />
         </div>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="location">Location</Label>
