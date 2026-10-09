@@ -3,10 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { USERNAME_PATTERN, USERNAME_RULES } from "@/lib/username";
 
 export type ProfileFormState = { error: string } | null;
-
-const USERNAME_PATTERN = /^[a-z0-9_]{3,20}$/;
 
 export async function updateProfile(
   _prevState: ProfileFormState,
@@ -27,9 +26,7 @@ export async function updateProfile(
   const avatarPath = String(formData.get("avatar_path") ?? "");
 
   if (!USERNAME_PATTERN.test(username)) {
-    return {
-      error: "Username must be 3-20 characters: lowercase letters, numbers, and underscores only.",
-    };
+    return { error: USERNAME_RULES };
   }
 
   let avatarUrl: string | undefined;
