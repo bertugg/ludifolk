@@ -46,6 +46,24 @@ function MiniAvatar({ p }: { p: ParticipantForDisplay }) {
   );
 }
 
+function PlayerRows({ players, divided }: { players: ParticipantForDisplay[]; divided: boolean }) {
+  return (
+    <ul className={cn("flex flex-col divide-y divide-border/60 text-sm", divided && "border-t border-border/60")}>
+      {players.map((p, i) => (
+        <li key={i} className="flex items-center gap-2 px-3 py-1.5">
+          <MiniAvatar p={p} />
+          <span className="min-w-0 flex-1 truncate text-muted-foreground">{participantDisplayName(p)}</span>
+          {(p.score !== null || p.position !== null) && (
+            <span className="font-bold tabular-nums text-foreground">
+              {p.score !== null ? p.score : `#${p.position}`}
+            </span>
+          )}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 export function FeedCard({ item }: { item: FeedItem }) {
   const { session } = item;
   const isCooperative = session.game.scoringType === "cooperative";
@@ -95,32 +113,26 @@ export function FeedCard({ item }: { item: FeedItem }) {
 
           <div className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-xl bg-card shadow-sm ring-1 ring-foreground/5">
             {isCooperative ? (
-              <div className="flex flex-1 flex-col items-center justify-center gap-2 p-3 text-center">
-                <span
-                  className={cn(
-                    "flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium",
-                    won ? "bg-forest/10 text-forest" : "bg-destructive/10 text-destructive",
+              <>
+                <div className="flex flex-col gap-1 pb-2">
+                  <span
+                    className={cn(
+                      "flex w-fit items-center gap-1.5 rounded-xl px-3 py-1 text-xs font-medium",
+                      won ? "bg-forest/10 text-forest" : "bg-destructive/10 text-destructive",
+                    )}
+                  >
+                    {won ? <CircleCheckIcon className="size-3.5" /> : <CircleXIcon className="size-3.5" />}
+                    Mission {won ? "Success" : "Failed"}
+                  </span>
+                  {session.cooperativeScore !== null && (
+                    <p className="flex items-baseline gap-1.5 px-3 pt-1">
+                      <span className="type-score text-4xl text-foreground">{session.cooperativeScore}</span>
+                      <span className="text-xs font-bold text-muted-foreground">points</span>
+                    </p>
                   )}
-                >
-                  {won ? <CircleCheckIcon className="size-3.5" /> : <CircleXIcon className="size-3.5" />}
-                  Mission {won ? "Success" : "Failed"}
-                </span>
-                {session.cooperativeScore !== null && (
-                  <p className="type-score text-4xl text-foreground">
-                    {session.cooperativeScore}
-                  </p>
-                )}
-                <div className="flex flex-wrap justify-center gap-1.5">
-                  {players.slice(0, 5).map((p, i) => (
-                    <Avatar key={i} className="size-7">
-                      <AvatarImage src={p.profile?.avatar_url ?? undefined} alt={participantDisplayName(p)} />
-                      <AvatarFallback className="text-xs">
-                        {participantDisplayName(p).slice(0, 1).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                  ))}
                 </div>
-              </div>
+                {players.length > 0 && <PlayerRows players={players} divided={false} />}
+              </>
             ) : (
               <>
                 {winner && (
@@ -142,28 +154,7 @@ export function FeedCard({ item }: { item: FeedItem }) {
                     )}
                   </div>
                 )}
-                {otherPlayers.length > 0 && (
-                  <ul
-                    className={cn(
-                      "flex flex-col divide-y divide-border/60 text-sm",
-                      winner && "border-t border-border/60",
-                    )}
-                  >
-                    {otherPlayers.map((p, i) => (
-                      <li key={i} className="flex items-center gap-2 px-3 py-1.5">
-                        <MiniAvatar p={p} />
-                        <span className="min-w-0 flex-1 truncate text-muted-foreground">
-                          {participantDisplayName(p)}
-                        </span>
-                        {(p.score !== null || p.position !== null) && (
-                          <span className="font-bold tabular-nums text-foreground">
-                            {p.score !== null ? p.score : `#${p.position}`}
-                          </span>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                )}
+                {otherPlayers.length > 0 && <PlayerRows players={otherPlayers} divided={!!winner} />}
               </>
             )}
           </div>
