@@ -12,6 +12,7 @@ import {
   sortParticipants,
   type ParticipantForDisplay,
 } from "@/lib/session-display";
+import { cn } from "@/lib/utils";
 
 export type FeedItem = {
   id: string;
@@ -90,7 +91,7 @@ export function FeedCard({ item }: { item: FeedItem }) {
             )}
           </div>
 
-          <div className="flex flex-1 flex-col gap-1.5">
+          <div className="flex min-w-0 flex-1 flex-col gap-1.5 rounded-xl border border-border bg-background p-3">
             {isCooperative ? (
               <>
                 <Badge
@@ -122,11 +123,11 @@ export function FeedCard({ item }: { item: FeedItem }) {
               <>
                 {winner && (
                   <>
-                    <Badge className="w-fit gap-1">
+                    <span className="flex w-fit items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
                       <CrownIcon className="size-3" />
                       Winner
-                    </Badge>
-                    <p className="font-heading text-base font-semibold">{participantDisplayName(winner)}</p>
+                    </span>
+                    <p className="truncate font-heading text-base font-semibold">{participantDisplayName(winner)}</p>
                     {winner.score !== null && (
                       <p className="flex items-baseline gap-1">
                         <span className="font-heading text-3xl font-bold leading-none text-primary">
@@ -137,16 +138,26 @@ export function FeedCard({ item }: { item: FeedItem }) {
                     )}
                   </>
                 )}
-                <ul className="mt-0.5 flex flex-col gap-1 text-sm text-muted-foreground">
-                  {otherPlayers.map((p, i) => (
-                    <li key={i} className="flex items-center gap-1.5">
-                      <MiniAvatar p={p} />
-                      {participantDisplayName(p)}
-                      {p.score !== null && ` — ${p.score}`}
-                      {p.position !== null && ` — #${p.position}`}
-                    </li>
-                  ))}
-                </ul>
+                {otherPlayers.length > 0 && (
+                  <ul
+                    className={cn(
+                      "flex flex-col gap-1.5 text-sm",
+                      winner && "mt-1 border-t border-border pt-2",
+                    )}
+                  >
+                    {otherPlayers.map((p, i) => (
+                      <li key={i} className="flex items-center gap-2">
+                        <MiniAvatar p={p} />
+                        <span className="min-w-0 flex-1 truncate text-foreground">{participantDisplayName(p)}</span>
+                        {(p.score !== null || p.position !== null) && (
+                          <span className="font-medium tabular-nums text-foreground">
+                            {p.score !== null ? p.score : `#${p.position}`}
+                          </span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </>
             )}
           </div>
