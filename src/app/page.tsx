@@ -1,9 +1,8 @@
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
-import { BellIcon, LogOutIcon, SearchIcon, UserPlusIcon } from "lucide-react";
+import { BellIcon, SearchIcon, UserPlusIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { AppHomeLink } from "@/components/app-home-link";
 import { ButtonLink } from "@/components/button-link";
 import { Card } from "@/components/ui/card";
@@ -14,7 +13,6 @@ import { sessionFeedHighlights } from "@/lib/scoring";
 import type { Json } from "@/types/database";
 import { sessionPhotoUrls, signFeedPhotos } from "@/lib/feed-photos";
 import { hasPlaceholderUsername } from "@/lib/username";
-import { signOut } from "./actions";
 
 const ACTIVITY_SELECT = `
   id, created_at, profile_id,
@@ -283,11 +281,6 @@ export default async function Home() {
                 </Badge>
               )}
             </ButtonLink>
-            <form action={signOut}>
-              <Button type="submit" variant="ghost" size="icon" aria-label="Log out">
-                <LogOutIcon className="size-[22px]" />
-              </Button>
-            </form>
           </div>
         </div>
       </header>

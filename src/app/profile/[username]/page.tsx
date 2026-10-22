@@ -1,16 +1,18 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { Metadata } from "next";
-import { FlameIcon, Gamepad2Icon, MedalIcon, StarIcon, TrophyIcon, UsersIcon } from "lucide-react";
+import { FlameIcon, Gamepad2Icon, LogOutIcon, MedalIcon, StarIcon, TrophyIcon, UsersIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { AppHomeLink } from "@/components/app-home-link";
 import { ButtonLink } from "@/components/button-link";
+import { Button } from "@/components/ui/button";
 import { FollowButton } from "@/components/follow-button";
 import { ProfileTabs } from "@/components/profile-tabs";
 import { ShareButton } from "@/components/share-button";
 import { basicStats, headToHeadResult, longestWinStreak } from "@/lib/stats";
+import { signOut } from "@/app/actions";
 
 export async function generateMetadata({
   params,
@@ -298,6 +300,11 @@ export default async function ProfilePage({
                   <span className="font-medium text-foreground">{followingCount ?? 0}</span> following
                 </p>
 
+                {isOwner && (
+                  <ButtonLink href="/settings/profile" variant="outline" size="sm">
+                    Edit profile
+                  </ButtonLink>
+                )}
                 {!isOwner &&
                   (auth.user ? (
                     <FollowButton profileId={profile.id} initialFollowing={!!viewerFollow} />
@@ -402,11 +409,6 @@ export default async function ProfilePage({
                   Joined {joined}
                   {profile.privacy === "private" && " · Private profile"}
                 </p>
-                {isOwner && (
-                  <ButtonLink href="/settings/profile" variant="outline" size="sm" className="mt-2">
-                    Edit profile
-                  </ButtonLink>
-                )}
               </CardContent>
             </Card>
           }
@@ -466,6 +468,14 @@ export default async function ProfilePage({
             </div>
           }
         />
+        {isOwner && (
+          <form action={signOut} className="mt-8 mb-2">
+            <Button type="submit" variant="ghost" size="sm" className="text-muted-foreground">
+              <LogOutIcon />
+              Log out
+            </Button>
+          </form>
+        )}
       </div>
     </div>
   );
