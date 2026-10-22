@@ -132,3 +132,43 @@ wyrmspan,4,resources,Resources,,player,true,,,,,,approved,pre-CSV schema (see su
 wyrmspan,5,guild_cards,Guild Cards,,player,true,,,,,,approved,pre-CSV schema (see supabase/migrations/20261016-18)
 small-world,1,special_power,Power,choice,player,false,,Alchemist; Berserk; Bivouacking; Commando; Diplomat; Dragon Master; Flying; Forest; Fortified; Heroic; Hill; Merchant; Mounted; Pillaging; Seafaring; Spirit; Stout; Swamp; Underworld; Wealthy,,races,,approved,https://rulespal.com/small-world/rulebook (20 special power badges; base game)
 small-world,2,race,Race,choice,player,false,,Amazons; Dwarves; Elves; Ghouls; Giants; Halflings; Humans; Orcs; Ratmen; Skeletons; Sorcerers; Tritons; Trolls; Wizards,,races,,approved,https://rulespal.com/small-world/rulebook (14 race banners; base game)
+tokaido,1,journey_points,Journey Points,,player,true,,,,,Score track total before end-of-game bonuses.,approved,https://rulespal.com/tokaido/rulebook
+tokaido,2,temple_bonus,Temple Bonus,,player,true,,,,,"Most generous donor 10, second 7, third 4, other donors 2.",approved,https://rulespal.com/tokaido/rulebook
+tokaido,3,achievements,End Achievements,,player,true,,,,,"Gourmet, Bather, Chatterbox and Collector: 3 points each.",approved,https://rulespal.com/tokaido/rulebook
+tokaido,4,traveler,Traveler,choice,player,false,,Chuubei; Hirotada; Hiroshige; Kinko; Mitsukuni; Sasayakko; Satsuki; Umegae; Yoshiyasu,,,,approved,https://rulespal.com/tokaido/rulebook (9 base-game travelers)
+tokaido-duo,1,pilgrim,Pilgrim,,player,true,,,,,Temple track value × Garden track value.,approved,https://en.doc.boardgamearena.com/Gamehelptokaidoduo
+tokaido-duo,2,merchant,Merchant,,player,true,,,,,Rightmost score above a filled gold slab slot.,approved,https://en.doc.boardgamearena.com/Gamehelptokaidoduo
+tokaido-duo,3,artist,Artist,,player,true,,,,,Bottom-right uncovered painting slot.,approved,https://en.doc.boardgamearena.com/Gamehelptokaidoduo
+finspan,1,fish_cards,Fish Cards,,player,true,,,,,Points printed on visible fish.,approved,"https://lot.ahml.info/Finspan.pdf (end-of-game scoring, via search summary)"
+finspan,2,consumed_fish,Consumed Fish,,player,true,,,,,1 point per fish card under a visible fish.,approved,"https://lot.ahml.info/Finspan.pdf (end-of-game scoring, via search summary)"
+finspan,3,game_end_abilities,Game-End Abilities,,player,true,,,,,Points from game-end fish abilities.,approved,"https://lot.ahml.info/Finspan.pdf (end-of-game scoring, via search summary)"
+finspan,4,eggs_and_young,Eggs and Young,,player,true,,,,,1 point per egg and per young.,approved,"https://lot.ahml.info/Finspan.pdf (end-of-game scoring, via search summary)"
+finspan,5,schools,Schools,,player,true,,,,,6 points per school.,approved,"https://lot.ahml.info/Finspan.pdf (end-of-game scoring, via search summary)"
+court-of-the-dead-mourners-call,1,unity_tokens,Unity Tokens,,player,true,,,,,,approved,https://rulespal.com/court-of-the-dead-mourners-call/rulebook (scoring table)
+court-of-the-dead-mourners-call,2,bone_influence,Bone Influence,,player,true,,,,,,approved,https://rulespal.com/court-of-the-dead-mourners-call/rulebook (scoring table)
+court-of-the-dead-mourners-call,3,flesh_influence,Flesh Influence,,player,true,,,,,,approved,https://rulespal.com/court-of-the-dead-mourners-call/rulebook (scoring table)
+court-of-the-dead-mourners-call,4,spirit_influence,Spirit Influence,,player,true,,,,,,approved,https://rulespal.com/court-of-the-dead-mourners-call/rulebook (scoring table)
+court-of-the-dead-mourners-call,5,ulterior_motive,Ulterior Motive,,player,true,,,,,,approved,https://rulespal.com/court-of-the-dead-mourners-call/rulebook (scoring table)
+7-wonders-duel,1,civilian,Civilian Buildings (Blue),,player,true,,,,,,approved,https://gamerules.com/rules/7-wonders-duel/
+7-wonders-duel,2,scientific,Scientific Buildings (Green),,player,true,,,,,,approved,https://gamerules.com/rules/7-wonders-duel/
+7-wonders-duel,3,commercial,Commercial Buildings (Yellow),,player,true,,,,,,approved,https://gamerules.com/rules/7-wonders-duel/
+7-wonders-duel,4,guilds,Guilds (Purple),,player,true,,,,,,approved,https://gamerules.com/rules/7-wonders-duel/
+7-wonders-duel,5,wonders,Wonders,,player,true,,,,,,approved,https://gamerules.com/rules/7-wonders-duel/
+7-wonders-duel,6,progress_tokens,Progress Tokens,,player,true,,,,,,approved,https://gamerules.com/rules/7-wonders-duel/
+7-wonders-duel,7,coins,Coins,,player,true,,,,,1 point per 3 coins.,approved,https://gamerules.com/rules/7-wonders-duel/
+7-wonders-duel,8,military,Military,,player,true,,,,,Points for the conflict pawn position.,approved,https://gamerules.com/rules/7-wonders-duel/
+7-wonders-duel,9,victory_type,Victory Type,choice,team,false,,Civilian; Military Supremacy; Scientific Supremacy,,,,approved,https://gamerules.com/rules/7-wonders-duel/
+disney-villainous,1,villain,Villain,choice,player,false,,Captain Hook; Jafar; Maleficent; Prince John; Queen of Hearts; Ursula,,,,approved,https://miniaturemarket.com/reviewcorner/villainous-review (base game villains only)
+century-spice-road,1,point_cards,Point Cards,,player,true,,,,,,approved,https://rulespal.com/century-spice-road/rulebook
+century-spice-road,2,gold_coins,Gold Coins,,player,true,,,,,3 points each.,approved,https://rulespal.com/century-spice-road/rulebook
+century-spice-road,3,silver_coins,Silver Coins,,player,true,,,,,1 point each.,approved,https://rulespal.com/century-spice-road/rulebook
+century-spice-road,4,spices,Spices,,player,true,,,,,1 point per non-yellow cube left in your caravan.,approved,https://rulespal.com/century-spice-road/rulebook
+king-of-tokyo,1,monster,Monster,choice,player,false,,Alienoid; Cyber Kitty; Gigazaur; Meka Dragon; Space Penguin; The King,,,,approved,https://en.wikipedia.org/wiki/King_of_Tokyo (2016 edition monsters)
+scythe,1,coins,Coins in Hand,,player,true,,,,,,approved,https://rules.dized.com/game/qjEyV--bTu-DXKGZWToM1A/-6S5Kr3nQxiCxk4S_0GmQQ/game-end-and-scoring
+scythe,2,stars,Stars,,player,true,,,,,Coins by popularity tier.,approved,https://rules.dized.com/game/qjEyV--bTu-DXKGZWToM1A/-6S5Kr3nQxiCxk4S_0GmQQ/game-end-and-scoring
+scythe,3,territories,Territories,,player,true,,,,,Coins by popularity tier.,approved,https://rules.dized.com/game/qjEyV--bTu-DXKGZWToM1A/-6S5Kr3nQxiCxk4S_0GmQQ/game-end-and-scoring
+scythe,4,resources,Resources,,player,true,,,,,"Coins per 2 resources, by popularity tier.",approved,https://rules.dized.com/game/qjEyV--bTu-DXKGZWToM1A/-6S5Kr3nQxiCxk4S_0GmQQ/game-end-and-scoring
+scythe,5,structure_bonus,Structure Bonus,,player,true,,,,,,approved,https://rules.dized.com/game/qjEyV--bTu-DXKGZWToM1A/-6S5Kr3nQxiCxk4S_0GmQQ/game-end-and-scoring
+scythe,6,faction,Faction,choice,player,false,,Crimea; Nordic; Polania; Rusviet; Saxony; Albion; Togawa,,,,approved,https://en.wikipedia.org/wiki/Scythe_(board_game) (base + Invaders from Afar)
+scythe,7,player_mat,Player Mat,choice,player,false,,Agricultural; Engineering; Industrial; Mechanical; Patriotic; Innovative; Militant,,,,approved,https://en.wikipedia.org/wiki/Scythe_(board_game) (base + Invaders from Afar)
+root,1,faction,Faction,choice,player,false,,Marquise de Cat; Eyrie Dynasties; Woodland Alliance; Vagabond; Riverfolk Company; Lizard Cult; Underground Duchy; Corvid Conspiracy; Lord of the Hundreds; Keepers in Iron; Lilypad Diaspora; Twilight Council; Knaves of the Deepwood,,,,approved,"https://en.wikipedia.org/wiki/Root_(board_game) (base + Riverfolk, Underworld, Marauder, Homeland)"
