@@ -3,13 +3,26 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Combobox,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+} from "@/components/ui/combobox";
 import type { Choices, ScoringCategory } from "@/lib/scoring";
 
+// Beyond this many options, a single choice is a searchable dropdown instead
+// of chips (Villainous has 30+ villains).
+const MAX_CHIP_OPTIONS = 12;
+
 /**
- * Inputs for a game's choice fields (Small World's races, the map played) —
+ * Inputs for a game's choice fields (Scythe's faction, the map played) —
  * what was picked, never part of the score. Fields with options render as
- * toggle chips backed by hidden inputs; fields without options are free
- * text (comma-separated when several values are allowed). Submitted as
+ * toggle chips backed by hidden inputs, or a searchable dropdown when a
+ * single choice has many options; fields without options are free text
+ * (comma-separated when several values are allowed). Submitted as
  * `${fieldPrefix}-choice-${key}` and validated server-side by readChoices.
  */
 export function ChoiceFields({
@@ -42,6 +55,34 @@ export function ChoiceFields({
                 value={selected.join(", ")}
                 onChange={(e) => onChange(field.key, e.target.value ? [e.target.value] : [])}
               />
+            </div>
+          );
+        }
+
+        if (!field.multiple && field.options.length > MAX_CHIP_OPTIONS) {
+          return (
+            <div key={field.key} className="flex flex-col gap-1">
+              <Label htmlFor={name} className="text-xs font-normal text-muted-foreground" title={field.description}>
+                {field.label}
+              </Label>
+              <Combobox
+                items={field.options}
+                value={selected[0] ?? null}
+                onValueChange={(v) => onChange(field.key, v ? [v] : [])}
+              >
+                <ComboboxInput id={name} placeholder={`Choose ${field.label.toLowerCase()}…`} className="w-full" />
+                <ComboboxContent>
+                  <ComboboxEmpty>No match.</ComboboxEmpty>
+                  <ComboboxList>
+                    {(option: string) => (
+                      <ComboboxItem key={option} value={option}>
+                        {option}
+                      </ComboboxItem>
+                    )}
+                  </ComboboxList>
+                </ComboboxContent>
+              </Combobox>
+              {selected[0] && <input type="hidden" name={name} value={selected[0]} />}
             </div>
           );
         }
