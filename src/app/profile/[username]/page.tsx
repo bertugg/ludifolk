@@ -12,6 +12,7 @@ import { FollowButton } from "@/components/follow-button";
 import { ProfileTabs } from "@/components/profile-tabs";
 import { ShareButton } from "@/components/share-button";
 import { basicStats, headToHeadResult, longestWinStreak } from "@/lib/stats";
+import { FEATURES } from "@/lib/features";
 import { signOut } from "@/app/actions";
 
 export async function generateMetadata({
@@ -331,29 +332,31 @@ export default async function ProfilePage({
                   </div>
                 )}
 
-                <div className="flex w-full flex-col gap-1.5 pt-1">
-                  <h2 className="text-center text-xs font-semibold text-muted-foreground">Achievements</h2>
-                  <div className="grid grid-cols-3 gap-2">
-                    {achievements.map((a) => {
-                      const Icon = a.icon;
-                      return (
-                        <div
-                          key={a.key}
-                          className={`flex flex-col items-center gap-1 rounded-lg border p-2.5 text-center ${
-                            a.unlocked
-                              ? "border-primary/30 bg-primary/5 text-foreground"
-                              : "border-border bg-muted/40 text-muted-foreground opacity-60"
-                          }`}
-                        >
-                          <Icon className="size-5" />
-                          <span className="text-[11px] leading-tight font-medium">{a.title}</span>
-                        </div>
-                      );
-                    })}
+                {FEATURES.achievements && (
+                  <div className="flex w-full flex-col gap-1.5 pt-1">
+                    <h2 className="text-center text-xs font-semibold text-muted-foreground">Achievements</h2>
+                    <div className="grid grid-cols-3 gap-2">
+                      {achievements.map((a) => {
+                        const Icon = a.icon;
+                        return (
+                          <div
+                            key={a.key}
+                            className={`flex flex-col items-center gap-1 rounded-lg border p-2.5 text-center ${
+                              a.unlocked
+                                ? "border-primary/30 bg-primary/5 text-foreground"
+                                : "border-border bg-muted/40 text-muted-foreground opacity-60"
+                            }`}
+                          >
+                            <Icon className="size-5" />
+                            <span className="text-[11px] leading-tight font-medium">{a.title}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
+                )}
 
-                {isOwner && challenges.length > 0 && (
+                {FEATURES.challenges && isOwner && challenges.length > 0 && (
                   <div className="flex w-full flex-col gap-1.5 pt-1 text-left">
                     <h2 className="text-center text-xs font-semibold text-muted-foreground">Challenges</h2>
                     <ul className="flex flex-col gap-1.5">
