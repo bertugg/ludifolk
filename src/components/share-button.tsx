@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CheckIcon, ShareIcon } from "lucide-react";
+import { CheckIcon, Share2Icon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export function ShareButton({
@@ -55,7 +55,7 @@ export function ShareButton({
       className={iconOnly ? undefined : "gap-1.5"}
       aria-label={iconOnly ? "Share" : undefined}
     >
-      {copied ? <CheckIcon className="size-4" /> : <ShareIcon className="size-4" />}
+      {copied ? <CheckIcon className="size-4" /> : <Share2Icon className="size-4" />}
       {!iconOnly && (copied ? "Copied!" : "Share")}
     </Button>
   );

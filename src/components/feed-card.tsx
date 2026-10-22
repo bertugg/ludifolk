@@ -205,15 +205,13 @@ export function FeedCard({ item }: { item: FeedItem }) {
           <MessageSquareIcon className="size-4" />
           {session.commentCount > 0 && session.commentCount}
         </span>
-        <div className="ml-auto">
-          <ShareButton
-            title={`${session.game.title} — Ludifolk`}
-            path={sessionPath}
-            referralSource={`game_session:${session.id}`}
-            variant="ghost"
-            iconOnly
-          />
-        </div>
+        <ShareButton
+          title={`${session.game.title} — Ludifolk`}
+          path={sessionPath}
+          referralSource={`game_session:${session.id}`}
+          variant="ghost"
+          iconOnly
+        />
       </div>
     </article>
   );
