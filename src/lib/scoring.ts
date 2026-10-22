@@ -20,6 +20,11 @@ export type ScoringCategory = {
    * { [field key]: value } rows.
    */
   group?: string;
+  /**
+   * Shown on feed cards: player fields under the player's name, team fields
+   * under the game result. For a group, any part flags the whole group.
+   */
+  showInFeed?: boolean;
   contributesToTotal: boolean;
   /**
    * Subtracted from the total (Azul's floor line, Dominion's curses). Players
@@ -44,7 +49,8 @@ export function parseScoringSchema(raw: unknown): ScoringCategory[] {
       (c.type === undefined || c.type === "number" || c.type === "choice") &&
       (c.options === undefined || (Array.isArray(c.options) && c.options.every((o: unknown) => typeof o === "string"))) &&
       (c.multiple === undefined || typeof c.multiple === "boolean") &&
-      (c.group === undefined || typeof c.group === "string"),
+      (c.group === undefined || typeof c.group === "string") &&
+      (c.showInFeed === undefined || typeof c.showInFeed === "boolean"),
   );
 }
 
@@ -247,4 +253,64 @@ export function computeCategoryTotal(breakdown: Breakdown, categories: ScoringCa
 
 export function hasAnyValue(breakdown: Breakdown): boolean {
   return Object.values(breakdown).some((v) => v !== null && v !== undefined);
+}
+
+/** A choice group's rows as display text: "Flying · Ratmen, Hill · Elves". */
+export function choiceGroupText(group: ChoiceGroup, rows: ChoiceRow[]): string {
+  return rows
+    .map((row) => group.parts.map((part) => row[part.key]).filter(Boolean).join(" · "))
+    .filter(Boolean)
+    .join(", ");
+}
+
+/**
+ * Short display lines for a scope's feed-flagged fields, in schema order:
+ * "Ratmen · Flying" for choices and groups, "Military: 5" for scores.
+ * `breakdown` and `choices` are the raw jsonb columns for that scope.
+ */
+export function feedHighlights(
+  schema: ScoringCategory[],
+  scope: ScoringCategory["scope"],
+  breakdown: unknown,
+  choices: unknown,
+): string[] {
+  const scores = parseBreakdown(breakdown);
+  const picked = parseChoices(choices);
+  const groupRows = parseChoiceGroups(choices);
+  const groups = choiceGroups(schema, scope);
+  const lines: string[] = [];
+  const seenGroups = new Set<string>();
+  for (const c of schema) {
+    if (c.scope !== scope) continue;
+    if (c.group) {
+      if (seenGroups.has(c.group)) continue;
+      seenGroups.add(c.group);
+      const group = groups.find((g) => g.key === c.group)!;
+      if (!group.parts.some((part) => part.showInFeed)) continue;
+      const text = choiceGroupText(group, groupRows[group.key] ?? []);
+      if (text) lines.push(text);
+    } else if (c.showInFeed && isChoice(c)) {
+      if (picked[c.key]?.length) lines.push(picked[c.key].join(", "));
+    } else if (c.showInFeed) {
+      const value = scores[c.key];
+      if (value !== null && value !== undefined) lines.push(`${c.label}: ${value}`);
+    }
+  }
+  return lines;
+}
+
+/** Adds feed highlights to a session's participants, plus its whole-game highlights. */
+export function sessionFeedHighlights<P extends { score_breakdown: unknown; choices: unknown }>(
+  rawSchema: unknown,
+  session: { team_details: unknown; team_choices: unknown },
+  participants: P[],
+): { participants: (P & { highlights: string[] })[]; gameHighlights: string[] } {
+  const schema = parseScoringSchema(rawSchema);
+  return {
+    participants: participants.map((p) => ({
+      ...p,
+      highlights: feedHighlights(schema, "player", p.score_breakdown, p.choices),
+    })),
+    gameHighlights: feedHighlights(schema, "team", session.team_details, session.team_choices),
+  };
 }

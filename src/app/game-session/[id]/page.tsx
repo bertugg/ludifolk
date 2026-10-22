@@ -13,6 +13,7 @@ import { ShareButton } from "@/components/share-button";
 import { participantDisplayName, sessionHeadline, sortParticipants } from "@/lib/session-display";
 import { numericStats, percentileRank, performanceLabel } from "@/lib/stats";
 import {
+  choiceGroupText,
   hasAnyValue,
   parseBreakdown,
   parseChoiceGroups,
@@ -447,10 +448,7 @@ export default async function GameSessionPage({ params }: { params: Promise<{ id
 function pickedChoiceLines(fields: ScoringCategory[], groups: ChoiceGroup[], choices: Choices, rows: ChoiceGroups) {
   const lines: { key: string; label: string; text: string }[] = [];
   for (const group of groups) {
-    const text = (rows[group.key] ?? [])
-      .map((row) => group.parts.map((part) => row[part.key]).filter(Boolean).join(" · "))
-      .filter(Boolean)
-      .join(", ");
+    const text = choiceGroupText(group, rows[group.key] ?? []);
     if (text) lines.push({ key: group.key, label: group.label, text });
   }
   for (const field of fields) {

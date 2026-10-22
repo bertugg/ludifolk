@@ -10,6 +10,8 @@ import { Card } from "@/components/ui/card";
 import { FeedCard, type FeedItem } from "@/components/feed-card";
 import { FeedTabs } from "@/components/feed-tabs";
 import type { ParticipantForDisplay } from "@/lib/session-display";
+import { sessionFeedHighlights } from "@/lib/scoring";
+import type { Json } from "@/types/database";
 import { sessionPhotoUrls, signFeedPhotos } from "@/lib/feed-photos";
 import { hasPlaceholderUsername } from "@/lib/username";
 import { signOut } from "./actions";
@@ -18,10 +20,10 @@ const ACTIVITY_SELECT = `
   id, created_at, profile_id,
   actor:profiles ( username, display_name, avatar_url ),
   session:game_sessions (
-    id, played_at, location, notes, cooperative_outcome, cooperative_score,
-    game:games ( slug, title, image_url, scoring_type ),
+    id, played_at, location, notes, cooperative_outcome, cooperative_score, team_details, team_choices,
+    game:games ( slug, title, image_url, scoring_type, scoring_schema ),
     participants:game_participants (
-      guest_name, score, position, is_winner, confirmation_status, profile_id,
+      guest_name, score, position, is_winner, confirmation_status, profile_id, score_breakdown, choices,
       profile:profiles!game_participants_profile_id_fkey ( username, display_name, avatar_url )
     ),
     likes ( profile_id ),
@@ -42,8 +44,20 @@ type ActivityRow = {
     notes: string | null;
     cooperative_outcome: string | null;
     cooperative_score: number | null;
-    game: { slug: string; title: string; image_url: string | null; scoring_type: string } | null;
-    participants: (ParticipantForDisplay & { profile_id: string | null })[];
+    team_details: Json | null;
+    team_choices: Json | null;
+    game: {
+      slug: string;
+      title: string;
+      image_url: string | null;
+      scoring_type: string;
+      scoring_schema: Json | null;
+    } | null;
+    participants: (ParticipantForDisplay & {
+      profile_id: string | null;
+      score_breakdown: Json | null;
+      choices: Json | null;
+    })[];
     likes: { profile_id: string }[];
     comments: { id: string }[];
     photos: { storage_path: string; created_at: string }[];
@@ -74,6 +88,7 @@ function toFeedItems(
       actorName: a.actor?.display_name || a.actor?.username || "Someone",
       actorAvatarUrl: a.actor?.avatar_url ?? null,
       session: {
+        ...sessionFeedHighlights(a.session!.game!.scoring_schema, a.session!, a.session!.participants),
         id: a.session!.id,
         playedAt: a.session!.played_at,
         location: a.session!.location,
@@ -86,7 +101,6 @@ function toFeedItems(
           imageUrl: a.session!.game!.image_url,
           scoringType: a.session!.game!.scoring_type,
         },
-        participants: a.session!.participants,
         likeCount: a.session!.likes.length,
         likedByMe: a.session!.likes.some((l) => l.profile_id === userId),
         commentCount: a.session!.comments.length,
@@ -166,11 +180,12 @@ export default async function Home() {
         .from("game_sessions")
         .select(
           `
-            id, created_at, played_at, location, notes, cooperative_outcome, cooperative_score,
+            id, created_at, played_at, location, notes, cooperative_outcome, cooperative_score, team_details,
+            team_choices,
             creator:profiles!game_sessions_created_by_fkey ( username, display_name, avatar_url ),
-            game:games ( slug, title, image_url, scoring_type ),
+            game:games ( slug, title, image_url, scoring_type, scoring_schema ),
             participants:game_participants (
-              guest_name, score, position, is_winner, confirmation_status, profile_id,
+              guest_name, score, position, is_winner, confirmation_status, profile_id, score_breakdown, choices,
               profile:profiles!game_participants_profile_id_fkey ( username, display_name, avatar_url )
             ),
             likes ( profile_id ),
@@ -200,6 +215,7 @@ export default async function Home() {
       actorName: s.creator?.display_name || s.creator?.username || "Someone",
       actorAvatarUrl: s.creator?.avatar_url ?? null,
       session: {
+        ...sessionFeedHighlights(s.game!.scoring_schema, s, s.participants),
         id: s.id,
         playedAt: s.played_at,
         location: s.location,
@@ -212,7 +228,6 @@ export default async function Home() {
           imageUrl: s.game!.image_url,
           scoringType: s.game!.scoring_type,
         },
-        participants: s.participants,
         likeCount: s.likes.length,
         likedByMe: s.likes.some((l) => l.profile_id === userId),
         commentCount: s.comments.length,

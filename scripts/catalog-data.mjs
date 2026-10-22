@@ -20,7 +20,10 @@
 // means free text) and `multiple` is `true` when several can be picked.
 // Blank `type` means a scored number. Choice fields sharing a `group` key
 // (snake_case, unique within the game) are entered together as repeatable
-// rows — Small World's race + special power, one row per combo. `status` is
+// rows — Small World's race + special power, one row per combo.
+// `show_in_feed` is `true` to show the field on feed cards: player fields
+// under the player's name, team fields under the game result (blank = no;
+// fields in one group must agree). `status` is
 // `approved` or `draft`; a game with any draft row is seeded with no schema
 // until every row is approved. Never rename a `key` once sessions have been
 // logged — saved breakdowns are keyed by it.
@@ -36,7 +39,7 @@ const GAME_COLUMNS = [
 ];
 const SCORING_COLUMNS = [
   "slug", "order", "key", "label", "type", "scope", "contributes_to_total", "penalty", "options", "multiple",
-  "group", "description", "status", "source",
+  "group", "show_in_feed", "description", "status", "source",
 ];
 
 // Mirrors SCORING_TYPES in src/lib/games.ts.
@@ -231,12 +234,21 @@ export function loadCatalog() {
       } else if (r.options !== "" || r.multiple === "true" || r.group !== "") {
         errors.push(`${r._where}: options, multiple and group only apply to type "choice"`);
       }
+      if (r.show_in_feed !== "" && r.show_in_feed !== "true" && r.show_in_feed !== "false") {
+        errors.push(`${r._where}: show_in_feed must be "true", "false" or blank, got "${r.show_in_feed}"`);
+      }
       if (r.group && !/^[a-z0-9]+(_[a-z0-9]+)*$/.test(r.group)) errors.push(`${r._where}: group "${r.group}" must be lowercase_snake_case`);
       if (!STATUSES.includes(r.status)) errors.push(`${r._where}: status must be one of ${STATUSES.join(", ")}, got "${r.status}"`);
     }
 
     const groupScopes = new Map();
+    const groupFeed = new Map();
     for (const r of records.filter((r) => r.group)) {
+      const inFeed = r.show_in_feed === "true";
+      if (groupFeed.has(r.group) && groupFeed.get(r.group) !== inFeed) {
+        errors.push(`${r._where}: every field in group "${r.group}" must have the same show_in_feed`);
+      }
+      groupFeed.set(r.group, inFeed);
       if (keys.has(r.group)) errors.push(`${r._where}: group "${r.group}" is also a field key for ${slug}`);
       if (RESERVED_KEYS.includes(r.group)) errors.push(`${r._where}: group "${r.group}" is reserved — pick another`);
       if (groupScopes.has(r.group) && groupScopes.get(r.group) !== r.scope) {
@@ -260,6 +272,7 @@ export function loadCatalog() {
         ...(list(r.options).length > 0 ? { options: list(r.options) } : {}),
         ...(r.multiple === "true" ? { multiple: true } : {}),
         ...(r.group ? { group: r.group } : {}),
+        ...(r.show_in_feed === "true" ? { showInFeed: true } : {}),
         contributesToTotal: r.contributes_to_total === "true",
         ...(r.penalty === "true" ? { penalty: true } : {}),
       }));

@@ -27,7 +27,9 @@ export type FeedItem = {
     cooperativeScore: number | null;
     notes: string | null;
     game: { slug: string; title: string; imageUrl: string | null; scoringType: string };
-    participants: ParticipantForDisplay[];
+    participants: (ParticipantForDisplay & { highlights?: string[] })[];
+    /** Feed-flagged whole-game fields (see feedHighlights), shown under the result. */
+    gameHighlights: string[];
     likeCount: number;
     likedByMe: boolean;
     commentCount: number;
@@ -46,13 +48,32 @@ function MiniAvatar({ p }: { p: ParticipantForDisplay }) {
   );
 }
 
-function PlayerRows({ players, divided }: { players: ParticipantForDisplay[]; divided: boolean }) {
+type FeedParticipant = FeedItem["session"]["participants"][number];
+
+/** Feed-flagged fields under a name or result — "Flying · Ratmen". */
+function Highlights({ lines, className }: { lines?: string[]; className?: string }) {
+  if (!lines?.length) return null;
+  return (
+    <span className={cn("flex flex-col text-xs leading-snug text-muted-foreground", className)}>
+      {lines.map((line, i) => (
+        <span key={i} className="truncate">
+          {line}
+        </span>
+      ))}
+    </span>
+  );
+}
+
+function PlayerRows({ players, divided }: { players: FeedParticipant[]; divided: boolean }) {
   return (
     <ul className={cn("flex flex-col divide-y divide-border/60 text-sm", divided && "border-t border-border/60")}>
       {players.map((p, i) => (
         <li key={i} className="flex items-center gap-2 px-3 py-1.5">
           <MiniAvatar p={p} />
-          <span className="min-w-0 flex-1 truncate text-muted-foreground">{participantDisplayName(p)}</span>
+          <span className="flex min-w-0 flex-1 flex-col">
+            <span className="truncate text-muted-foreground">{participantDisplayName(p)}</span>
+            <Highlights lines={p.highlights} className="text-muted-foreground/80" />
+          </span>
           {(p.score !== null || p.position !== null) && (
             <span className="font-bold tabular-nums text-foreground">
               {p.score !== null ? p.score : `#${p.position}`}
@@ -130,6 +151,7 @@ export function FeedCard({ item }: { item: FeedItem }) {
                       <span className="text-xs font-bold text-muted-foreground">points</span>
                     </p>
                   )}
+                  <Highlights lines={session.gameHighlights} className="px-3 pt-1" />
                 </div>
                 {players.length > 0 && <PlayerRows players={players} divided={false} />}
               </>
@@ -144,6 +166,7 @@ export function FeedCard({ item }: { item: FeedItem }) {
                     <p className="truncate px-3 pt-1 text-sm font-semibold text-foreground">
                       {participantDisplayName(winner)}
                     </p>
+                    <Highlights lines={winner.highlights} className="px-3" />
                     {winner.score !== null && (
                       <p className="flex items-baseline gap-1.5 px-3">
                         <span className="type-score text-4xl text-foreground">
@@ -152,8 +175,10 @@ export function FeedCard({ item }: { item: FeedItem }) {
                         <span className="text-xs font-bold text-muted-foreground">points</span>
                       </p>
                     )}
+                    <Highlights lines={session.gameHighlights} className="px-3 pt-1" />
                   </div>
                 )}
+                {!winner && <Highlights lines={session.gameHighlights} className="px-3 pt-2.5 pb-1" />}
                 {otherPlayers.length > 0 && <PlayerRows players={otherPlayers} divided={!!winner} />}
               </>
             )}

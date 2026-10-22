@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { AppHomeLink } from "@/components/app-home-link";
 import { ButtonLink } from "@/components/button-link";
 import { FeedCard, type FeedItem } from "@/components/feed-card";
+import { sessionFeedHighlights } from "@/lib/scoring";
 import { sessionPhotoUrls, signFeedPhotos } from "@/lib/feed-photos";
 import { InviteMemberForm } from "./invite-member-form";
 import { RemoveMemberButton } from "./remove-member-button";
@@ -90,11 +91,12 @@ export default async function GroupPage({ params }: { params: Promise<{ slug: st
     .from("game_sessions")
     .select(
       `
-        id, created_at, played_at, location, notes, cooperative_outcome, cooperative_score,
+        id, created_at, played_at, location, notes, cooperative_outcome, cooperative_score, team_details,
+        team_choices,
         creator:profiles!game_sessions_created_by_fkey ( username, display_name, avatar_url ),
-        game:games ( slug, title, image_url, scoring_type ),
+        game:games ( slug, title, image_url, scoring_type, scoring_schema ),
         participants:game_participants (
-          guest_name, score, position, is_winner, confirmation_status, profile_id,
+          guest_name, score, position, is_winner, confirmation_status, profile_id, score_breakdown, choices,
           profile:profiles!game_participants_profile_id_fkey ( username, display_name, avatar_url )
         ),
         likes ( profile_id ),
@@ -119,6 +121,7 @@ export default async function GroupPage({ params }: { params: Promise<{ slug: st
       actorName: s.creator?.display_name || s.creator?.username || "Someone",
       actorAvatarUrl: s.creator?.avatar_url ?? null,
       session: {
+        ...sessionFeedHighlights(s.game!.scoring_schema, s, s.participants),
         id: s.id,
         playedAt: s.played_at,
         location: s.location,
@@ -131,7 +134,6 @@ export default async function GroupPage({ params }: { params: Promise<{ slug: st
           imageUrl: s.game!.image_url,
           scoringType: s.game!.scoring_type,
         },
-        participants: s.participants,
         likeCount: s.likes.length,
         likedByMe: s.likes.some((l) => l.profile_id === userId),
         commentCount: s.comments.length,
