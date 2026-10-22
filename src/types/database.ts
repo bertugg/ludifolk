@@ -143,6 +143,7 @@ export type Database = {
       game_participants: {
         Row: {
           added_by: string;
+          choices: Json | null;
           confirmation_status: string;
           created_at: string;
           guest_name: string | null;
@@ -157,6 +158,7 @@ export type Database = {
         };
         Insert: {
           added_by: string;
+          choices?: Json | null;
           confirmation_status?: string;
           created_at?: string;
           guest_name?: string | null;
@@ -171,6 +173,7 @@ export type Database = {
         };
         Update: {
           added_by?: string;
+          choices?: Json | null;
           confirmation_status?: string;
           created_at?: string;
           guest_name?: string | null;
@@ -219,6 +222,7 @@ export type Database = {
           location: string | null;
           notes: string | null;
           played_at: string;
+          team_choices: Json | null;
           team_details: Json | null;
           updated_at: string;
           visibility: string;
@@ -234,6 +238,7 @@ export type Database = {
           location?: string | null;
           notes?: string | null;
           played_at?: string;
+          team_choices?: Json | null;
           team_details?: Json | null;
           updated_at?: string;
           visibility?: string;
@@ -249,6 +254,7 @@ export type Database = {
           location?: string | null;
           notes?: string | null;
           played_at?: string;
+          team_choices?: Json | null;
           team_details?: Json | null;
           updated_at?: string;
           visibility?: string;
@@ -286,6 +292,7 @@ export type Database = {
           description: string | null;
           id: string;
           image_url: string | null;
+          is_hidden: boolean;
           max_players: number | null;
           mechanics: string[];
           min_players: number | null;
@@ -307,6 +314,7 @@ export type Database = {
           description?: string | null;
           id?: string;
           image_url?: string | null;
+          is_hidden?: boolean;
           max_players?: number | null;
           mechanics?: string[];
           min_players?: number | null;
@@ -328,6 +336,7 @@ export type Database = {
           description?: string | null;
           id?: string;
           image_url?: string | null;
+          is_hidden?: boolean;
           max_players?: number | null;
           mechanics?: string[];
           min_players?: number | null;

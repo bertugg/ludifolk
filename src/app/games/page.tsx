@@ -91,7 +91,8 @@ async function gamesFriendsPlay() {
   const { data: gameRows } = await supabase
     .from("games")
     .select("id, slug, title, image_url")
-    .in("id", topGameIds);
+    .in("id", topGameIds)
+    .eq("is_hidden", false);
 
   return topGameIds
     .map((id) => {

@@ -12,7 +12,23 @@ import { LikeButton } from "@/components/like-button";
 import { ShareButton } from "@/components/share-button";
 import { participantDisplayName, sessionHeadline, sortParticipants } from "@/lib/session-display";
 import { numericStats, percentileRank, performanceLabel } from "@/lib/stats";
-import { hasAnyValue, parseBreakdown, parseScoringSchema, playerCategories, teamCategories } from "@/lib/scoring";
+import {
+  hasAnyValue,
+  parseBreakdown,
+  parseChoiceGroups,
+  parseChoices,
+  parseScoringSchema,
+  playerCategories,
+  playerChoiceFields,
+  playerChoiceGroups,
+  teamCategories,
+  teamChoiceFields,
+  teamChoiceGroups,
+  type ChoiceGroup,
+  type ChoiceGroups,
+  type Choices,
+  type ScoringCategory,
+} from "@/lib/scoring";
 import { CommentForm } from "./comment-form";
 import { DeleteCommentButton } from "./delete-comment-button";
 import { DeleteSessionButton } from "./delete-session-button";
@@ -108,6 +124,14 @@ export default async function GameSessionPage({ params }: { params: Promise<{ id
     .map((p) => ({ player: p, breakdown: parseBreakdown(p.score_breakdown) }))
     .filter((p) => hasAnyValue(p.breakdown));
   const teamDetails = parseBreakdown(session.team_details);
+  const playerChoices = playerChoiceFields(schema);
+  const playerGroups = playerChoiceGroups(schema);
+  const pickedTeamChoices = pickedChoiceLines(
+    teamChoiceFields(schema),
+    teamChoiceGroups(schema),
+    parseChoices(session.team_choices),
+    parseChoiceGroups(session.team_choices),
+  );
 
   let performance: {
     score: number;
@@ -204,10 +228,16 @@ export default async function GameSessionPage({ params }: { params: Promise<{ id
         </div>
       ) : null}
 
-      {teamCats.length > 0 && hasAnyValue(teamDetails) && (
+      {((teamCats.length > 0 && hasAnyValue(teamDetails)) || pickedTeamChoices.length > 0) && (
         <div className="flex flex-col gap-2 rounded-lg border border-border p-3">
           <h2 className="text-sm font-semibold text-muted-foreground">Game Details</h2>
           <div className="flex flex-wrap gap-4">
+            {pickedTeamChoices.map((c) => (
+              <div key={c.key}>
+                <p className="text-lg font-semibold">{c.text}</p>
+                <p className="text-xs text-muted-foreground">{c.label}</p>
+              </div>
+            ))}
             {teamCats
               .filter((c) => teamDetails[c.key] !== null && teamDetails[c.key] !== undefined)
               .map((c) => (
@@ -225,6 +255,12 @@ export default async function GameSessionPage({ params }: { params: Promise<{ id
       <ul className="flex flex-col gap-2">
         {players.map((p, i) => {
           const name = participantDisplayName(p);
+          const picked = pickedChoiceLines(
+            playerChoices,
+            playerGroups,
+            parseChoices(p.choices),
+            parseChoiceGroups(p.choices),
+          );
           return (
             <li key={i} className="flex items-center gap-3 rounded-lg border border-border p-2.5">
               <Avatar size="sm">
@@ -237,6 +273,12 @@ export default async function GameSessionPage({ params }: { params: Promise<{ id
                 {p.confirmation_status === "declined" && (
                   <span className="ml-1.5 font-normal text-muted-foreground">(says this wasn&apos;t them)</span>
                 )}
+                {picked.map((c) => (
+                  <span key={c.key} className="block text-xs font-normal text-muted-foreground">
+                    {picked.length > 1 && `${c.label}: `}
+                    {c.text}
+                  </span>
+                ))}
               </span>
               {game.scoring_type !== "cooperative" && (
                 <span className="text-sm text-muted-foreground">
@@ -399,4 +441,20 @@ export default async function GameSessionPage({ params }: { params: Promise<{ id
       </div>
     </div>
   );
+}
+
+/** Picked choices as display lines: "Amazons, Ratmen", or "Ratmen · Flying, Elves · Hill" for a group. */
+function pickedChoiceLines(fields: ScoringCategory[], groups: ChoiceGroup[], choices: Choices, rows: ChoiceGroups) {
+  const lines: { key: string; label: string; text: string }[] = [];
+  for (const group of groups) {
+    const text = (rows[group.key] ?? [])
+      .map((row) => group.parts.map((part) => row[part.key]).filter(Boolean).join(" · "))
+      .filter(Boolean)
+      .join(", ");
+    if (text) lines.push({ key: group.key, label: group.label, text });
+  }
+  for (const field of fields) {
+    if (choices[field.key]?.length) lines.push({ key: field.key, label: field.label, text: choices[field.key].join(", ") });
+  }
+  return lines;
 }

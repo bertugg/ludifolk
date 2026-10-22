@@ -22,7 +22,9 @@ export async function searchGames(query: string, limit = 8): Promise<GameSummary
   const supabase = await createClient();
   const trimmed = query.trim();
 
-  let q = supabase.from("games").select(SUMMARY_COLUMNS).order("title").limit(limit);
+  // Hidden games are retired from the catalog: still viewable via their
+  // sessions and detail page, but never offered for browsing or logging.
+  let q = supabase.from("games").select(SUMMARY_COLUMNS).eq("is_hidden", false).order("title").limit(limit);
   if (trimmed) {
     q = q.ilike("title", `%${trimmed}%`);
   }

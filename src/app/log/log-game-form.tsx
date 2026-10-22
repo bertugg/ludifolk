@@ -17,7 +17,20 @@ import { GameCombobox } from "@/components/game-combobox";
 import { MentionTextarea } from "@/components/mention-textarea";
 import { PlayerNameInput, type PlayerSuggestion } from "@/components/player-name-input";
 import { ScoreEntryFields } from "@/components/score-entry-fields";
-import { computeCategoryTotal, parseScoringSchema, playerCategories, teamCategories } from "@/lib/scoring";
+import { ChoiceFields } from "@/components/choice-fields";
+import { ChoiceGroupFields } from "@/components/choice-group-fields";
+import {
+  computeCategoryTotal,
+  parseScoringSchema,
+  playerCategories,
+  playerChoiceFields,
+  playerChoiceGroups,
+  teamCategories,
+  teamChoiceFields,
+  teamChoiceGroups,
+  type ChoiceGroups,
+  type Choices,
+} from "@/lib/scoring";
 import { formatMegabytes, MAX_SESSION_PHOTOS, MAX_SESSION_PHOTO_BYTES } from "@/lib/photo-limits";
 import { downscaleImage } from "@/lib/downscale-image";
 import { createClient } from "@/lib/supabase/client";
@@ -31,6 +44,8 @@ type Row = {
   winner: boolean;
   breakdown: Record<string, string>;
   showDetails: boolean;
+  choices: Choices;
+  choiceGroups: ChoiceGroups;
 };
 type GroupMember = { id: string; username: string; display_name: string | null };
 type Group = { id: string; name: string; members: GroupMember[] };
@@ -292,7 +307,7 @@ function PlayedAtInput() {
 }
 
 function emptyRow(id: string, name = ""): Row {
-  return { id, name, score: "", position: "", winner: false, breakdown: {}, showDetails: false };
+  return { id, name, score: "", position: "", winner: false, breakdown: {}, showDetails: false, choices: {}, choiceGroups: {} };
 }
 
 export function LogGameForm({
@@ -344,12 +359,18 @@ function LogGameFormInner({
   const [groupId, setGroupId] = useState("none");
   const [rows, setRows] = useState<Row[]>([emptyRow(selfRowId, ownUsername)]);
   const [teamDetails, setTeamDetails] = useState<Record<string, string>>({});
+  const [teamChoices, setTeamChoices] = useState<Choices>({});
+  const [teamGroups, setTeamGroups] = useState<ChoiceGroups>({});
 
   const scoringType = selectedGame?.scoring_type ?? "numeric";
   const selectedGroup = groups.find((g) => g.id === groupId) ?? null;
   const schema = parseScoringSchema(selectedGame?.scoring_schema);
   const playerCats = playerCategories(schema);
   const teamCats = teamCategories(schema);
+  const playerChoices = playerChoiceFields(schema);
+  const teamChoiceList = teamChoiceFields(schema);
+  const playerGroups = playerChoiceGroups(schema);
+  const teamGroupList = teamChoiceGroups(schema);
 
   const createdSessionId = state && "success" in state ? state.success.sessionId : null;
   const hadFailedPhotos = !!(state && "success" in state && state.success.failedPhotos);
@@ -440,6 +461,7 @@ function LogGameFormInner({
                 .filter((m) => m.username === row.name || !usedNames.has(m.username.toLowerCase()))
                 .map((m) => ({ value: m.username, label: memberLabel(m) }))
             : [];
+          const showScoreFields = scoringType === "numeric" && playerCats.length > 0 && row.showDetails;
           return (
             <div key={row.id} className="flex flex-col gap-1.5">
               <div className="flex items-center gap-2">
@@ -523,17 +545,39 @@ function LogGameFormInner({
               </div>
 
               {scoringType === "numeric" && playerCats.length > 0 && (
-                <>
-                  <Button
-                    type="button"
-                    variant="link"
-                    size="sm"
-                    className="h-auto w-fit self-start p-0 text-xs"
-                    onClick={() => updateRow(row.id, { showDetails: !row.showDetails })}
-                  >
-                    {row.showDetails ? "Hide detailed score" : "Add detailed score"}
-                  </Button>
-                  {row.showDetails && (
+                <Button
+                  type="button"
+                  variant="link"
+                  size="sm"
+                  className="h-auto w-fit self-start p-0 text-xs"
+                  onClick={() => updateRow(row.id, { showDetails: !row.showDetails })}
+                >
+                  {row.showDetails ? "Hide detailed score" : "Add detailed score"}
+                </Button>
+              )}
+
+              {(playerChoices.length > 0 || playerGroups.length > 0 || showScoreFields) && (
+                <div className="flex flex-col gap-2.5 rounded-lg bg-muted/60 p-2.5">
+                  {playerGroups.length > 0 && (
+                    <ChoiceGroupFields
+                      key={selectedGame?.id}
+                      fieldPrefix={`participant-${row.id}`}
+                      groups={playerGroups}
+                      values={row.choiceGroups}
+                      onChange={(key, groupRows) =>
+                        updateRow(row.id, { choiceGroups: { ...row.choiceGroups, [key]: groupRows } })
+                      }
+                    />
+                  )}
+                  {playerChoices.length > 0 && (
+                    <ChoiceFields
+                      fieldPrefix={`participant-${row.id}`}
+                      fields={playerChoices}
+                      values={row.choices}
+                      onChange={(key, values) => updateRow(row.id, { choices: { ...row.choices, [key]: values } })}
+                    />
+                  )}
+                  {showScoreFields && (
                     <ScoreEntryFields
                       fieldPrefix={`participant-${row.id}`}
                       categories={playerCats}
@@ -541,7 +585,7 @@ function LogGameFormInner({
                       onChange={(key, value) => updateRowCategory(row.id, key, value)}
                     />
                   )}
-                </>
+                </div>
               )}
             </div>
           );
@@ -575,15 +619,34 @@ function LogGameFormInner({
         </div>
       )}
 
-      {teamCats.length > 0 && (
-        <div className="flex flex-col gap-1.5">
+      {(teamCats.length > 0 || teamChoiceList.length > 0 || teamGroupList.length > 0) && (
+        <div className="flex flex-col gap-2.5 rounded-lg bg-muted/60 p-2.5">
           <Label>Game details</Label>
-          <ScoreEntryFields
-            fieldPrefix="team"
-            categories={teamCats}
-            values={teamDetails}
-            onChange={(key, value) => setTeamDetails((d) => ({ ...d, [key]: value }))}
-          />
+          {teamGroupList.length > 0 && (
+            <ChoiceGroupFields
+              key={selectedGame?.id}
+              fieldPrefix="team"
+              groups={teamGroupList}
+              values={teamGroups}
+              onChange={(key, groupRows) => setTeamGroups((g) => ({ ...g, [key]: groupRows }))}
+            />
+          )}
+          {teamChoiceList.length > 0 && (
+            <ChoiceFields
+              fieldPrefix="team"
+              fields={teamChoiceList}
+              values={teamChoices}
+              onChange={(key, values) => setTeamChoices((c) => ({ ...c, [key]: values }))}
+            />
+          )}
+          {teamCats.length > 0 && (
+            <ScoreEntryFields
+              fieldPrefix="team"
+              categories={teamCats}
+              values={teamDetails}
+              onChange={(key, value) => setTeamDetails((d) => ({ ...d, [key]: value }))}
+            />
+          )}
         </div>
       )}
 

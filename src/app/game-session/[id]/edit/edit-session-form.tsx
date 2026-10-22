@@ -10,15 +10,39 @@ import { Label } from "@/components/ui/label";
 import { MentionTextarea } from "@/components/mention-textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScoreEntryFields } from "@/components/score-entry-fields";
+import { ChoiceFields } from "@/components/choice-fields";
+import { ChoiceGroupFields } from "@/components/choice-group-fields";
 import { participantDisplayName } from "@/lib/session-display";
 import {
+  categoryEntryValue,
   computeCategoryTotal,
   parseBreakdown,
+  parseChoiceGroups,
+  parseChoices,
   parseScoringSchema,
   playerCategories,
+  playerChoiceFields,
+  playerChoiceGroups,
   teamCategories,
+  teamChoiceFields,
+  teamChoiceGroups,
+  type ChoiceGroups,
+  type Choices,
+  type ScoringCategory,
 } from "@/lib/scoring";
 import { getSessionData } from "../data";
+
+/** Stored breakdown → score-entry field strings (penalties shown as their plain amount). */
+function toEntryStrings(raw: unknown, categories: ScoringCategory[]): Record<string, string> {
+  const parsed = parseBreakdown(raw);
+  return Object.fromEntries(
+    Object.entries(parsed).map(([k, v]) => {
+      if (v === null || v === undefined) return [k, ""];
+      const category = categories.find((c) => c.key === k);
+      return [k, String(category ? categoryEntryValue(category, v) : v)];
+    }),
+  );
+}
 
 type SessionData = NonNullable<Awaited<ReturnType<typeof getSessionData>>>;
 type GameData = NonNullable<SessionData["game"]>;
@@ -37,6 +61,10 @@ export function EditSessionForm({ session, game }: { session: SessionData; game:
   const schema = parseScoringSchema(game.scoring_schema);
   const playerCats = playerCategories(schema);
   const teamCats = teamCategories(schema);
+  const playerChoices = playerChoiceFields(schema);
+  const teamChoiceList = teamChoiceFields(schema);
+  const playerGroups = playerChoiceGroups(schema);
+  const teamGroupList = teamChoiceGroups(schema);
 
   const [scores, setScores] = useState<Record<string, string>>(
     Object.fromEntries(session.participants.map((p) => [p.id, p.score !== null ? String(p.score) : ""])),
@@ -49,24 +77,23 @@ export function EditSessionForm({ session, game }: { session: SessionData; game:
   );
   const [breakdowns, setBreakdowns] = useState<Record<string, Record<string, string>>>(
     Object.fromEntries(
-      session.participants.map((p) => {
-        const parsed = parseBreakdown(p.score_breakdown);
-        const asStrings = Object.fromEntries(
-          Object.entries(parsed).map(([k, v]) => [k, v !== null && v !== undefined ? String(v) : ""]),
-        );
-        return [p.id, asStrings];
-      }),
+      session.participants.map((p) => [p.id, toEntryStrings(p.score_breakdown, playerCats)]),
     ),
   );
   const [showDetails, setShowDetails] = useState<Record<string, boolean>>(
     Object.fromEntries(session.participants.map((p) => [p.id, hasAny(p.score_breakdown)])),
   );
-  const [teamDetails, setTeamDetails] = useState<Record<string, string>>(() => {
-    const parsed = parseBreakdown(session.team_details);
-    return Object.fromEntries(
-      Object.entries(parsed).map(([k, v]) => [k, v !== null && v !== undefined ? String(v) : ""]),
-    );
-  });
+  const [teamDetails, setTeamDetails] = useState<Record<string, string>>(() =>
+    toEntryStrings(session.team_details, teamCats),
+  );
+  const [choices, setChoices] = useState<Record<string, Choices>>(
+    Object.fromEntries(session.participants.map((p) => [p.id, parseChoices(p.choices)])),
+  );
+  const [teamChoices, setTeamChoices] = useState<Choices>(() => parseChoices(session.team_choices));
+  const [groups, setGroups] = useState<Record<string, ChoiceGroups>>(
+    Object.fromEntries(session.participants.map((p) => [p.id, parseChoiceGroups(p.choices)])),
+  );
+  const [teamGroups, setTeamGroups] = useState<ChoiceGroups>(() => parseChoiceGroups(session.team_choices));
 
   function hasAny(raw: unknown) {
     const parsed = parseBreakdown(raw);
@@ -100,6 +127,7 @@ export function EditSessionForm({ session, game }: { session: SessionData; game:
             Object.entries(breakdownValues).map(([k, v]) => [k, v.trim() ? Number(v) : null]),
           );
           const computedTotal = computeCategoryTotal(numericBreakdown, playerCats);
+          const showScoreFields = game.scoring_type === "numeric" && playerCats.length > 0 && showDetails[p.id];
 
           return (
             <div key={p.id} className="flex flex-col gap-1.5 rounded-lg border border-border p-2.5">
@@ -141,17 +169,40 @@ export function EditSessionForm({ session, game }: { session: SessionData; game:
               </div>
 
               {game.scoring_type === "numeric" && playerCats.length > 0 && (
-                <>
-                  <Button
-                    type="button"
-                    variant="link"
-                    size="sm"
-                    className="h-auto w-fit self-start p-0 text-xs"
-                    onClick={() => setShowDetails((s) => ({ ...s, [p.id]: !s[p.id] }))}
-                  >
-                    {showDetails[p.id] ? "Hide detailed score" : "Add detailed score"}
-                  </Button>
-                  {showDetails[p.id] && (
+                <Button
+                  type="button"
+                  variant="link"
+                  size="sm"
+                  className="h-auto w-fit self-start p-0 text-xs"
+                  onClick={() => setShowDetails((s) => ({ ...s, [p.id]: !s[p.id] }))}
+                >
+                  {showDetails[p.id] ? "Hide detailed score" : "Add detailed score"}
+                </Button>
+              )}
+
+              {(playerChoices.length > 0 || playerGroups.length > 0 || showScoreFields) && (
+                <div className="flex flex-col gap-2.5 rounded-lg bg-muted/60 p-2.5">
+                  {playerGroups.length > 0 && (
+                    <ChoiceGroupFields
+                      fieldPrefix={`participant-${p.id}`}
+                      groups={playerGroups}
+                      values={groups[p.id] ?? {}}
+                      onChange={(key, groupRows) =>
+                        setGroups((g) => ({ ...g, [p.id]: { ...g[p.id], [key]: groupRows } }))
+                      }
+                    />
+                  )}
+                  {playerChoices.length > 0 && (
+                    <ChoiceFields
+                      fieldPrefix={`participant-${p.id}`}
+                      fields={playerChoices}
+                      values={choices[p.id] ?? {}}
+                      onChange={(key, values) =>
+                        setChoices((c) => ({ ...c, [p.id]: { ...c[p.id], [key]: values } }))
+                      }
+                    />
+                  )}
+                  {showScoreFields && (
                     <ScoreEntryFields
                       fieldPrefix={`participant-${p.id}`}
                       categories={playerCats}
@@ -159,7 +210,7 @@ export function EditSessionForm({ session, game }: { session: SessionData; game:
                       onChange={(key, value) => updateBreakdown(p.id, key, value)}
                     />
                   )}
-                </>
+                </div>
               )}
             </div>
           );
@@ -195,15 +246,33 @@ export function EditSessionForm({ session, game }: { session: SessionData; game:
         </div>
       )}
 
-      {teamCats.length > 0 && (
-        <div className="flex flex-col gap-1.5">
+      {(teamCats.length > 0 || teamChoiceList.length > 0 || teamGroupList.length > 0) && (
+        <div className="flex flex-col gap-2.5 rounded-lg bg-muted/60 p-2.5">
           <Label>Game details</Label>
-          <ScoreEntryFields
-            fieldPrefix="team"
-            categories={teamCats}
-            values={teamDetails}
-            onChange={(key, value) => setTeamDetails((d) => ({ ...d, [key]: value }))}
-          />
+          {teamGroupList.length > 0 && (
+            <ChoiceGroupFields
+              fieldPrefix="team"
+              groups={teamGroupList}
+              values={teamGroups}
+              onChange={(key, groupRows) => setTeamGroups((g) => ({ ...g, [key]: groupRows }))}
+            />
+          )}
+          {teamChoiceList.length > 0 && (
+            <ChoiceFields
+              fieldPrefix="team"
+              fields={teamChoiceList}
+              values={teamChoices}
+              onChange={(key, values) => setTeamChoices((c) => ({ ...c, [key]: values }))}
+            />
+          )}
+          {teamCats.length > 0 && (
+            <ScoreEntryFields
+              fieldPrefix="team"
+              categories={teamCats}
+              values={teamDetails}
+              onChange={(key, value) => setTeamDetails((d) => ({ ...d, [key]: value }))}
+            />
+          )}
         </div>
       )}
 

@@ -3,7 +3,20 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { computeCategoryTotal, parseScoringSchema, playerCategories, teamCategories } from "@/lib/scoring";
+import {
+  choiceData,
+  computeCategoryTotal,
+  parseScoringSchema,
+  playerCategories,
+  playerChoiceFields,
+  playerChoiceGroups,
+  readChoiceGroups,
+  readChoices,
+  signBreakdown,
+  teamCategories,
+  teamChoiceFields,
+  teamChoiceGroups,
+} from "@/lib/scoring";
 
 export type EditResultFormState = { error: string } | null;
 
@@ -66,7 +79,7 @@ export async function updateGameResult(
         if (value) rawBreakdown[cat.key] = value;
       }
     }
-    const numericBreakdown = toNumericBreakdown(rawBreakdown);
+    const numericBreakdown = signBreakdown(toNumericBreakdown(rawBreakdown), playerCats);
     const scoreBreakdown = Object.keys(numericBreakdown).length > 0 ? numericBreakdown : null;
     const computedTotal = scoreBreakdown ? computeCategoryTotal(numericBreakdown, playerCats) : null;
 
@@ -76,6 +89,10 @@ export async function updateGameResult(
       position: position.trim() ? Number.parseInt(position, 10) : null,
       is_winner: winner,
       score_breakdown: scoreBreakdown,
+      choices: choiceData(
+        readChoices(formData, `participant-${pid}`, playerChoiceFields(schema)),
+        readChoiceGroups(formData, `participant-${pid}`, playerChoiceGroups(schema)),
+      ),
     };
   });
 
@@ -114,7 +131,7 @@ export async function updateGameResult(
       const value = String(formData.get(`team-cat-${cat.key}`) ?? "").trim();
       if (value) rawTeam[cat.key] = value;
     }
-    const numericTeam = toNumericBreakdown(rawTeam);
+    const numericTeam = signBreakdown(toNumericBreakdown(rawTeam), teamCats);
     teamDetails = Object.keys(numericTeam).length > 0 ? numericTeam : null;
   }
 
@@ -127,6 +144,10 @@ export async function updateGameResult(
       cooperative_outcome: cooperativeOutcome,
       cooperative_score: cooperativeScore,
       team_details: teamDetails,
+      team_choices: choiceData(
+        readChoices(formData, "team", teamChoiceFields(schema)),
+        readChoiceGroups(formData, "team", teamChoiceGroups(schema)),
+      ),
     })
     .eq("id", sessionId);
 
@@ -142,6 +163,7 @@ export async function updateGameResult(
         position: u.position,
         is_winner: u.is_winner,
         score_breakdown: u.score_breakdown,
+        choices: u.choices,
       })
       .eq("id", u.id);
     if (error) {

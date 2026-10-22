@@ -7,10 +7,11 @@ export const getSessionData = cache(async (id: string) => {
     .from("game_sessions")
     .select(
       `
-        id, played_at, location, notes, cooperative_outcome, cooperative_score, visibility, created_by, team_details,
+        id, played_at, location, notes, cooperative_outcome, cooperative_score, visibility, created_by,
+        team_details, team_choices,
         game:games ( id, slug, title, image_url, scoring_type, scoring_schema ),
         participants:game_participants (
-          id, profile_id, guest_name, score, position, is_winner, confirmation_status, score_breakdown,
+          id, profile_id, guest_name, score, position, is_winner, confirmation_status, score_breakdown, choices,
           profile:profiles!game_participants_profile_id_fkey ( username, display_name, avatar_url )
         ),
         likes ( profile_id ),

@@ -31,7 +31,7 @@ const REQUEST_DELAY_MS = 600;
 // scoring_type (numeric | position | winner_only | cooperative). Anything
 // not listed here defaults to 'numeric', unless BGG tags the game with the
 // "Cooperative Game" mechanic, which always wins. Kept in sync with
-// scripts/seed-games.mjs.
+// data/games.csv.
 const SCORING_TYPE_OVERRIDES = {
   "Ticket to Ride": "position",
   Codenames: "winner_only",
@@ -46,7 +46,7 @@ const SCORING_TYPE_OVERRIDES = {
   "Heat: Pedal to the Metal": "position",
 };
 
-// Kept in sync with scripts/seed-games.mjs's GAMES list.
+// Kept in sync with data/games.csv.
 const CURATED_TITLES = [
   "Catan",
   "Carcassonne",

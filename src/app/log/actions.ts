@@ -2,7 +2,20 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { computeCategoryTotal, parseScoringSchema, playerCategories, teamCategories } from "@/lib/scoring";
+import {
+  choiceData,
+  computeCategoryTotal,
+  parseScoringSchema,
+  playerCategories,
+  playerChoiceFields,
+  playerChoiceGroups,
+  readChoiceGroups,
+  readChoices,
+  signBreakdown,
+  teamCategories,
+  teamChoiceFields,
+  teamChoiceGroups,
+} from "@/lib/scoring";
 
 type ParticipantResult = {
   name: string;
@@ -102,6 +115,7 @@ export async function logGame(
     .from("games")
     .select("id, slug, title, scoring_type, scoring_schema")
     .eq("id", gameId)
+    .eq("is_hidden", false)
     .maybeSingle();
 
   if (!game) {
@@ -111,6 +125,8 @@ export async function logGame(
   const schema = parseScoringSchema(game.scoring_schema);
   const playerCats = playerCategories(schema);
   const teamCats = teamCategories(schema);
+  const playerChoices = playerChoiceFields(schema);
+  const playerGroups = playerChoiceGroups(schema);
 
   const rows = parseRows(formData);
   if (rows.length === 0) {
@@ -148,6 +164,7 @@ export async function logGame(
     position: number | null;
     is_winner: boolean;
     score_breakdown: Record<string, number> | null;
+    choices: ReturnType<typeof choiceData>;
   }[] = [];
 
   for (const row of rows) {
@@ -166,7 +183,9 @@ export async function logGame(
     // silently ignored even if present (defensive against a stale/tampered
     // request after switching games in the UI).
     const numericBreakdown =
-      game.scoring_type === "numeric" && playerCats.length > 0 ? toNumericBreakdown(row.breakdown) : {};
+      game.scoring_type === "numeric" && playerCats.length > 0
+        ? signBreakdown(toNumericBreakdown(row.breakdown), playerCats)
+        : {};
     const scoreBreakdown = Object.keys(numericBreakdown).length > 0 ? numericBreakdown : null;
     // Never trust a client-computed total — recompute server-side, and
     // only when every contributing category is actually present (a partial
@@ -181,6 +200,10 @@ export async function logGame(
       position: row.position.trim() ? Number.parseInt(row.position, 10) : null,
       is_winner: row.winner,
       score_breakdown: scoreBreakdown,
+      choices: choiceData(
+        readChoices(formData, `participant-${row.id}`, playerChoices),
+        readChoiceGroups(formData, `participant-${row.id}`, playerGroups),
+      ),
     });
   }
 
@@ -224,7 +247,8 @@ export async function logGame(
   }
   // winner_only: r.is_winner already set from the checkbox, left as-is.
 
-  const teamBreakdownRaw = teamCats.length > 0 ? toNumericBreakdown(parseTeamBreakdown(formData)) : {};
+  const teamBreakdownRaw =
+    teamCats.length > 0 ? signBreakdown(toNumericBreakdown(parseTeamBreakdown(formData)), teamCats) : {};
   const teamDetails = Object.keys(teamBreakdownRaw).length > 0 ? teamBreakdownRaw : null;
 
   const { data: session, error: sessionError } = await supabase
@@ -239,6 +263,10 @@ export async function logGame(
       cooperative_outcome: cooperativeOutcome,
       cooperative_score: cooperativeScore,
       team_details: teamDetails,
+      team_choices: choiceData(
+        readChoices(formData, "team", teamChoiceFields(schema)),
+        readChoiceGroups(formData, "team", teamChoiceGroups(schema)),
+      ),
     })
     .select("id")
     .single();
@@ -256,6 +284,7 @@ export async function logGame(
       position: r.position,
       is_winner: r.is_winner,
       score_breakdown: r.score_breakdown,
+      choices: r.choices,
       added_by: auth.user!.id,
     })),
   );
